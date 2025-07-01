@@ -98,3 +98,132 @@ def get_recent_minecraft_hangout():
     most_recent = minecraft_responses[0]
     
     return most_recent
+
+def get_recent_kiss_hangout():
+    # Get all records
+    raw_responses = worksheet.get_all_records()
+    
+    # Filter for responses where they hung out and kissed
+    kiss_responses = []
+    
+    for row in raw_responses:
+        hangout_field = row.get('Did you hang out (in real life)? ', '')
+        date_field = row.get('What day is this for? ', '')
+        activities_field = row.get('Check all that are true for this hangout.', '')
+        
+        # Check for kissing-related activities
+        kissing_activities = ['We held hands and kissed', 'We kissed', 'kiss']
+        has_kissed = any(activity.lower() in activities_field.lower() for activity in kissing_activities)
+        
+        if hangout_field == 'Yes' and date_field and has_kissed:
+            try:
+                # Parse the date (assuming format like '6/29/2025')
+                date_obj = datetime.strptime(date_field, '%m/%d/%Y')
+                kiss_responses.append({
+                    'date': date_obj,
+                    'date_string': date_field,
+                    'user': row.get('Who is filling this out right now.', 'Unknown'),
+                    'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
+                    'activities': activities_field
+                })
+            except ValueError:
+                print(f"Could not parse date: {date_field}")
+                continue
+    
+    if not kiss_responses:
+        print("No kiss hangout responses found!")
+        return None
+    
+    # Sort by date (most recent first)
+    kiss_responses.sort(key=lambda x: x['date'], reverse=True)
+    
+    # Get the most recent
+    most_recent = kiss_responses[0]
+    
+    return most_recent
+
+def get_status():
+    """
+    Returns a summary of recent relationship activities
+    """
+    recent_hangout = get_recent_hangout()
+    recent_minecraft = get_recent_minecraft_hangout()
+    recent_kiss = get_recent_kiss_hangout()
+    
+    status = {
+        'last_hangout_date': recent_hangout['date_string'] if recent_hangout else None,
+        'last_minecraft_date': recent_minecraft['date_string'] if recent_minecraft else None,
+        'last_kiss_date': recent_kiss['date_string'] if recent_kiss else None
+    }
+    
+    return status
+
+def get_last_entry():
+    """
+    Returns the most recent entry for each user (Amy and Michael)
+    """
+    # Get all records
+    raw_responses = worksheet.get_all_records()
+    
+    # Separate entries by user
+    amy_entries = []
+    michael_entries = []
+    
+    for row in raw_responses:
+        user = row.get('Who is filling this out right now.', '')
+        timestamp = row.get('Timestamp', '')
+        
+        if user and timestamp:
+            try:
+                # Parse the timestamp (format: '6/30/2025 9:58:01')
+                date_obj = datetime.strptime(timestamp, '%m/%d/%Y %H:%M:%S')
+                
+                entry_data = {
+                    'date': date_obj,
+                    'timestamp': timestamp,
+                    'user': user,
+                    'still_like': row.get('Do you still like me? ', ''),
+                    'relationship_strength': row.get('How strong do you think our relationship is?', ''),
+                    'stress_level': row.get('How stressed are you about things outside of our relationship? ', ''),
+                    'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
+                    'worries': row.get("What's something you're worried about? ", ''),
+                    'day_for': row.get('What day is this for? ', ''),
+                    'hangout': row.get('Did you hang out (in real life)? ', ''),
+                    'activities': row.get('Check all that are true for this hangout.', '')
+                }
+                
+                if user == 'Amy':
+                    amy_entries.append(entry_data)
+                elif user == 'Michael':
+                    michael_entries.append(entry_data)
+                    
+            except ValueError:
+                print(f"Could not parse timestamp: {timestamp}")
+                continue
+    
+    # Sort by date (most recent first) and get the latest for each user
+    amy_entries.sort(key=lambda x: x['date'], reverse=True)
+    michael_entries.sort(key=lambda x: x['date'], reverse=True)
+    
+    last_entries = {
+        'amy': amy_entries[0] if amy_entries else None,
+        'michael': michael_entries[0] if michael_entries else None
+    }
+    
+    return last_entries
+
+if __name__ == "__main__":
+    print("=== Most Recent Hangout ===")
+    x = get_recent_hangout()
+    print(x)
+    print("\n=== Most Recent Minecraft Hangout ===")
+    get_recent_minecraft_hangout()
+    print("\n=== Most Recent Kiss Hangout ===")
+    get_recent_kiss_hangout()
+    print("\n=== Status Summary ===")
+    status = get_status()
+    print(status)
+    print("\n=== Last Entry for Each User ===")
+    last_entries = get_last_entry()
+    print("Amy's last entry:", last_entries['amy'] if last_entries['amy'] else "No entries found")
+    print("Michael's last entry:", last_entries['michael'] if last_entries['michael'] else "No entries found")
