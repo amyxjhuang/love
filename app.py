@@ -5,6 +5,7 @@ from google.oauth2.service_account import Credentials
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+from get_current_status import get_recent_hangout, get_recent_minecraft_hangout
 
 # Load environment variables
 load_dotenv()
@@ -32,86 +33,86 @@ client = gspread.authorize(creds)
 SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
 worksheet = client.open_by_url(SHEET_URL).sheet1
 
-# Define the hangout functions
-def get_recent_hangout():
-    # Get all records
-    raw_responses = worksheet.get_all_records()
+# # Define the hangout functions
+# def get_recent_hangout():
+#     # Get all records
+#     raw_responses = worksheet.get_all_records()
     
-    # Filter for responses where they hung out
-    hangout_responses = []
+#     # Filter for responses where they hung out
+#     hangout_responses = []
     
-    for row in raw_responses:
-        hangout_field = row.get('Did you hang out (in real life)? ', '')
-        date_field = row.get('What day is this for? ', '')
+#     for row in raw_responses:
+#         hangout_field = row.get('Did you hang out (in real life)? ', '')
+#         date_field = row.get('What day is this for? ', '')
         
-        if hangout_field == 'Yes' and date_field:
-            try:
-                # Parse the date (assuming format like '6/29/2025')
-                date_obj = datetime.strptime(date_field, '%m/%d/%Y')
-                hangout_responses.append({
-                    'date': date_obj,
-                    'date_string': date_field,
-                    'user': row.get('Who is filling this out right now.', 'Unknown'),
-                    'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
-                    'activities': row.get('Check all that are true for this hangout.', '')
-                })
-            except ValueError:
-                print(f"Could not parse date: {date_field}")
-                continue
+#         if hangout_field == 'Yes' and date_field:
+#             try:
+#                 # Parse the date (assuming format like '6/29/2025')
+#                 date_obj = datetime.strptime(date_field, '%m/%d/%Y')
+#                 hangout_responses.append({
+#                     'date': date_obj,
+#                     'date_string': date_field,
+#                     'user': row.get('Who is filling this out right now.', 'Unknown'),
+#                     # 'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
+#                     'activities': row.get('Check all that are true for this hangout.', '')
+#                 })
+#             except ValueError:
+#                 print(f"Could not parse date: {date_field}")
+#                 continue
     
-    if not hangout_responses:
-        print("No hangout responses found!")
-        return None
+#     if not hangout_responses:
+#         print("No hangout responses found!")
+#         return None
     
-    # Sort by date (most recent first)
-    hangout_responses.sort(key=lambda x: x['date'], reverse=True)
+#     # Sort by date (most recent first)
+#     hangout_responses.sort(key=lambda x: x['date'], reverse=True)
     
-    # Get the most recent
-    most_recent = hangout_responses[0]
+#     # Get the most recent
+#     most_recent = hangout_responses[0]
     
-    return most_recent
+#     return most_recent
 
-def get_recent_minecraft_hangout():
-    # Get all records
-    raw_responses = worksheet.get_all_records()
+# def get_recent_minecraft_hangout():
+#     # Get all records
+#     raw_responses = worksheet.get_all_records()
     
-    # Filter for responses where they hung out and played Minecraft
-    minecraft_responses = []
+#     # Filter for responses where they hung out and played Minecraft
+#     minecraft_responses = []
     
-    for row in raw_responses:
-        hangout_field = row.get('Did you hang out (in real life)? ', '')
-        date_field = row.get('What day is this for? ', '')
-        activities_field = row.get('Check all that are true for this hangout.', '')
+#     for row in raw_responses:
+#         hangout_field = row.get('Did you hang out (in real life)? ', '')
+#         date_field = row.get('What day is this for? ', '')
+#         activities_field = row.get('Check all that are true for this hangout.', '')
         
-        if hangout_field == 'Yes' and date_field and 'We played Minecraft' in activities_field:
-            try:
-                # Parse the date (assuming format like '6/29/2025')
-                date_obj = datetime.strptime(date_field, '%m/%d/%Y')
-                minecraft_responses.append({
-                    'date': date_obj,
-                    'date_string': date_field,
-                    'user': row.get('Who is filling this out right now.', 'Unknown'),
-                    'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
-                    'activities': activities_field
-                })
-            except ValueError:
-                print(f"Could not parse date: {date_field}")
-                continue
+#         if hangout_field == 'Yes' and date_field and 'We played Minecraft' in activities_field:
+#             try:
+#                 # Parse the date (assuming format like '6/29/2025')
+#                 date_obj = datetime.strptime(date_field, '%m/%d/%Y')
+#                 minecraft_responses.append({
+#                     'date': date_obj,
+#                     'date_string': date_field,
+#                     'user': row.get('Who is filling this out right now.', 'Unknown'),
+#                     # 'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
+#                     'activities': activities_field
+#                 })
+#             except ValueError:
+#                 print(f"Could not parse date: {date_field}")
+#                 continue
     
-    if not minecraft_responses:
-        print("No Minecraft hangout responses found!")
-        return None
+#     if not minecraft_responses:
+#         print("No Minecraft hangout responses found!")
+#         return None
     
-    # Sort by date (most recent first)
-    minecraft_responses.sort(key=lambda x: x['date'], reverse=True)
+#     # Sort by date (most recent first)
+#     minecraft_responses.sort(key=lambda x: x['date'], reverse=True)
     
-    # Get the most recent
-    most_recent = minecraft_responses[0]
+#     # Get the most recent
+#     most_recent = minecraft_responses[0]
     
-    return most_recent
+#     return most_recent
 
 app = Flask(__name__)
-CORS(app)  # Allow requests from your website
+CORS(app, origins=["*"])  # Allow requests from any origin
 
 @app.route('/')
 def home():
