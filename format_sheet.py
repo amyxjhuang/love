@@ -32,11 +32,11 @@ class User(Enum):
     MICHAEL = "Michael"
 
 class CrashOut(Enum):
-    NO_GOOD = "No, everything is good"
+    NO = "No, everything is good"
     # Add more as needed
 
 class Argument(Enum):
-    NO_GOOD = "No, everything is good."
+    NO = "No, everything is good."
     # Add more as needed
 
 class Period(Enum):
