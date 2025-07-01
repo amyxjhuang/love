@@ -1,0 +1,13 @@
+# Google service account credentials
+*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.env.*
+
+# macOS
+.DS_Store 
