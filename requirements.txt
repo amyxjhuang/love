@@ -1,3 +1,5 @@
 gspread
 google-auth
-python-dotenv 
+python-dotenv
+Flask
+Flask-CORS 
