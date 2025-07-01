@@ -38,7 +38,7 @@ for row in responses:
         INSERT INTO relationship_responses (
             timestamp, still_like, crash_out, stress_level, argued, period,
             select_all_true, relationship_strength, coitus, coitus_quality,
-            hangout, long_distance, check_all_true, day_for, who_filled,
+            hangout, long_distance, check_all_true, day_for, user,
             fellatio, jealousy, good_memory, worries, anything_else
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (

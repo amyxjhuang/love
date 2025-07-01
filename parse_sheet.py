@@ -21,7 +21,6 @@ load_dotenv()
 SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
 
 sheet = client.open_by_url(SHEET_URL).sheet1
-# sheet = client.open('Relationship Survey (Responses)').sheet1
 
 # Get all records as a list of dicts
 records = sheet.get_all_records()
