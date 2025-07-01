@@ -40,7 +40,6 @@ def get_recent_hangout():
                     'date': date_obj,
                     'date_string': date_field,
                     'user': row.get('Who is filling this out right now.', 'Unknown'),
-                    'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
                     'activities': row.get('Check all that are true for this hangout.', '')
                 })
             except ValueError:
@@ -84,7 +83,6 @@ def get_recent_minecraft_hangout():
                     'date': date_obj,
                     'date_string': date_field,
                     'user': row.get('Who is filling this out right now.', 'Unknown'),
-                    'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
                     'activities': activities_field
                 })
             except ValueError:
