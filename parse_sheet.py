@@ -1,5 +1,7 @@
 import gspread
 from google.oauth2.service_account import Credentials
+import os
+from dotenv import load_dotenv
 
 # Path to your downloaded service account key
 SERVICE_ACCOUNT_FILE = 'amyhuang-49fcaf834c17.json'
@@ -12,7 +14,13 @@ creds = Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 client = gspread.authorize(creds)
 
-sheet = client.open_by_url('https://docs.google.com/spreadsheets/d/1HBrwFrSRBhiRsGPYI7ItChttzdtHFbPuaNCq6LKE15I/edit?gid=724269780#gid=724269780').sheet1
+# Load environment variables from .env file
+load_dotenv()
+
+# Get the Google Sheet URL from the environment variable
+SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
+
+sheet = client.open_by_url(SHEET_URL).sheet1
 # sheet = client.open('Relationship Survey (Responses)').sheet1
 
 # Get all records as a list of dicts
