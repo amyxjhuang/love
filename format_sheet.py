@@ -27,6 +27,10 @@ class YesNo(Enum):
     YES = "Yes"
     NO = "No"
 
+class User(Enum):
+    AMY = "Amy"
+    MICHAEL = "Michael"
+
 class CrashOut(Enum):
     NO_GOOD = "No, everything is good"
     # Add more as needed
@@ -82,6 +86,9 @@ def parse_row(row):
             'Are you long distance right now?'
         ]:
             parsed[key] = YesNo(value).name if value in YesNo._value2member_map_ else value
+        # User field
+        elif key == 'Who is filling this out right now.':
+            parsed['user'] = User(value).name if value in User._value2member_map_ else value
         # Categorical fields
         elif key == 'Did you have any crash outs about us? \n\nSomething counts as a crash out if you spent >30 minutes worrying about the relationship, or had a bad thought that lasted multiple days. ':
             parsed[key] = CrashOut(value).name if value in CrashOut._value2member_map_ else value

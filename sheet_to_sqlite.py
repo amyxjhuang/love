@@ -10,6 +10,7 @@ cursor.execute('''
 CREATE TABLE IF NOT EXISTS relationship_responses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp TEXT,
+    user TEXT,
     still_like TEXT,
     crash_out TEXT,
     stress_level INTEGER,
@@ -23,7 +24,6 @@ CREATE TABLE IF NOT EXISTS relationship_responses (
     long_distance TEXT,
     check_all_true TEXT,
     day_for TEXT,
-    who_filled TEXT,
     fellatio TEXT,
     jealousy TEXT,
     good_memory TEXT,
