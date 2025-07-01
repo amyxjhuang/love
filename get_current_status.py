@@ -21,6 +21,7 @@ SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
 
 worksheet = client.open_by_url(SHEET_URL).sheet1
 
+# Define the hangout functions
 def get_recent_hangout():
     # Get all records
     raw_responses = worksheet.get_all_records()
@@ -40,6 +41,7 @@ def get_recent_hangout():
                     'date': date_obj,
                     'date_string': date_field,
                     'user': row.get('Who is filling this out right now.', 'Unknown'),
+                    'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
                     'activities': row.get('Check all that are true for this hangout.', '')
                 })
             except ValueError:
@@ -55,11 +57,6 @@ def get_recent_hangout():
     
     # Get the most recent
     most_recent = hangout_responses[0]
-    
-    print(f"Most recent hangout: {most_recent['date_string']}")
-    print(f"User: {most_recent['user']}")
-    print(f"Good memory: {most_recent['good_memory']}")
-    print(f"Activities: {most_recent['activities']}")
     
     return most_recent
 
@@ -83,6 +80,7 @@ def get_recent_minecraft_hangout():
                     'date': date_obj,
                     'date_string': date_field,
                     'user': row.get('Who is filling this out right now.', 'Unknown'),
+                    'good_memory': row.get("What's a good memory from this hangout (or relationship)? ", ''),
                     'activities': activities_field
                 })
             except ValueError:
@@ -99,16 +97,4 @@ def get_recent_minecraft_hangout():
     # Get the most recent
     most_recent = minecraft_responses[0]
     
-    print(f"Most recent Minecraft hangout: {most_recent['date_string']}")
-    print(f"User: {most_recent['user']}")
-    print(f"Good memory: {most_recent['good_memory']}")
-    print(f"Activities: {most_recent['activities']}")
-    
     return most_recent
-
-if __name__ == "__main__":
-    print("=== Most Recent Hangout ===")
-    x = get_recent_hangout()
-    print(x)
-    print("\n=== Most Recent Minecraft Hangout ===")
-    get_recent_minecraft_hangout() 
