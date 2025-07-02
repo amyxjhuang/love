@@ -5,7 +5,7 @@ from google.oauth2.service_account import Credentials
 import os
 from dotenv import load_dotenv
 from datetime import datetime
-from get_current_status import get_recent_hangout, get_recent_minecraft_hangout
+from get_current_status import get_recent_hangout, get_recent_minecraft_hangout, get_status, get_last_entry
 # Load environment variables
 load_dotenv()
 
@@ -42,7 +42,9 @@ def home():
         "endpoints": {
             "/hangout": "Get most recent hangout",
             "/minecraft": "Get most recent Minecraft hangout",
-            "/all": "Get both hangout and Minecraft data"
+            "/all": "Get status summary and last entries",
+            "/status": "Get status summary only",
+            "/last-entries": "Get last entries for each user"
         }
     })
 
@@ -68,21 +70,44 @@ def minecraft():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/status')
+def status():
+    try:
+        return jsonify(get_status())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/last-entries')
+def last_entries():
+    try:
+        data = get_last_entry()
+        # Convert datetime objects to strings for JSON serialization
+        if data['amy']:
+            data['amy']['date'] = data['amy']['date'].strftime('%Y-%m-%d %H:%M:%S')
+        if data['michael']:
+            data['michael']['date'] = data['michael']['date'].strftime('%Y-%m-%d %H:%M:%S')
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/all')
 def all_data():
     try:
-        recent_hangout = get_recent_hangout()
-        recent_minecraft = get_recent_minecraft_hangout()
+        # Get status summary
+        status_data = get_status()
         
-        # Convert datetime objects to strings
-        if recent_hangout:
-            recent_hangout['date'] = recent_hangout['date'].strftime('%Y-%m-%d')
-        if recent_minecraft:
-            recent_minecraft['date'] = recent_minecraft['date'].strftime('%Y-%m-%d')
+        # Get last entries for each user
+        last_entries_data = get_last_entry()
+        
+        # Convert datetime objects to strings for JSON serialization
+        if last_entries_data['amy']:
+            last_entries_data['amy']['date'] = last_entries_data['amy']['date'].strftime('%Y-%m-%d %H:%M:%S')
+        if last_entries_data['michael']:
+            last_entries_data['michael']['date'] = last_entries_data['michael']['date'].strftime('%Y-%m-%d %H:%M:%S')
         
         return jsonify({
-            'recent_hangout': recent_hangout,
-            'recent_minecraft': recent_minecraft
+            'status': status_data,
+            'last_entries': last_entries_data
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
