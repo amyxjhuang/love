@@ -157,24 +157,118 @@
     </div>
 
     <script>
-        // const API_URL = 'http://localhost:5000';
-        // Change this URL to your deployed API
-        const API_URL = 'https://love-lve0fvinl-amy-huangs-projects-acc0015b.vercel.app/all';
+        // Change this to your public Google Sheet URL
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1HBrwFrSRBhiRsGPYI7ItChttzdtHFbPuaNCq6LKE15I/gviz/tq?tqx=out:json';
         
         async function loadHangoutData() {
             try {
-                const response = await fetch(`${API_URL}/all`);
+                const response = await fetch(SHEET_URL);
                 if (!response.ok) {
-                    throw new Error('Failed to load hangout data');
+                    throw new Error('Failed to load sheet data');
                 }
                 
-                const data = await response.json();
-                displayHangoutData(data);
+                const text = await response.text();
+                // Google Sheets returns data wrapped in a function call, we need to extract it
+                const jsonText = text.substring(47).slice(0, -2); // Remove the wrapper
+                const data = JSON.parse(jsonText);
+                
+                const processedData = processSheetData(data);
+                displayHangoutData(processedData);
             } catch (error) {
                 console.error('Error loading hangout data:', error);
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error').style.display = 'block';
             }
+        }
+
+        function processSheetData(data) {
+            const rows = data.table.rows;
+            const headers = data.table.cols.map(col => col.label);
+            
+            // Convert to array of objects
+            const records = rows.slice(1).map(row => {
+                const obj = {};
+                row.c.forEach((cell, index) => {
+                    obj[headers[index]] = cell ? cell.v : '';
+                });
+                return obj;
+            });
+            
+            // Get status summary
+            const status = getStatus(records);
+            
+            // Get last entries for each user
+            const lastEntries = getLastEntries(records);
+            
+            return {
+                status: status,
+                last_entries: lastEntries
+            };
+        }
+
+        function getStatus(records) {
+            // Find most recent hangout
+            const hangoutEntries = records.filter(record => 
+                record['Did you hang out (in real life)? '] === 'Yes' && 
+                record['What day is this for? ']
+            ).sort((a, b) => {
+                const dateA = new Date(a['What day is this for? ']);
+                const dateB = new Date(b['What day is this for? ']);
+                return dateB - dateA;
+            });
+            
+            // Find most recent Minecraft hangout
+            const minecraftEntries = records.filter(record => 
+                record['Did you hang out (in real life)? '] === 'Yes' && 
+                record['What day is this for? '] &&
+                record['Check all that are true for this hangout.'].includes('We played Minecraft')
+            ).sort((a, b) => {
+                const dateA = new Date(a['What day is this for? ']);
+                const dateB = new Date(b['What day is this for? ']);
+                return dateB - dateA;
+            });
+            
+            // Find most recent kiss hangout
+            const kissEntries = records.filter(record => 
+                record['Did you hang out (in real life)? '] === 'Yes' && 
+                record['What day is this for? '] &&
+                (record['Check all that are true for this hangout.'].includes('We held hands and kissed') ||
+                 record['Check all that are true for this hangout.'].includes('We kissed'))
+            ).sort((a, b) => {
+                const dateA = new Date(a['What day is this for? ']);
+                const dateB = new Date(b['What day is this for? ']);
+                return dateB - dateA;
+            });
+            
+            return {
+                last_hangout_date: hangoutEntries[0] ? hangoutEntries[0]['What day is this for? '] : null,
+                last_minecraft_date: minecraftEntries[0] ? minecraftEntries[0]['What day is this for? '] : null,
+                last_kiss_date: kissEntries[0] ? kissEntries[0]['What day is this for? '] : null
+            };
+        }
+
+        function getLastEntries(records) {
+            // Separate entries by user
+            const amyEntries = records.filter(record => record['Who is filling this out right now.'] === 'Amy');
+            const michaelEntries = records.filter(record => record['Who is filling this out right now.'] === 'Michael');
+            
+            // Sort by timestamp (most recent first)
+            amyEntries.sort((a, b) => {
+                const dateA = new Date(a['Timestamp']);
+                const dateB = new Date(b['Timestamp']);
+                return dateB - dateA;
+            });
+            
+            michaelEntries.sort((a, b) => {
+                const dateA = new Date(a['Timestamp']);
+                const dateB = new Date(b['Timestamp']);
+                return dateB - dateA;
+            });
+            
+            return {
+                amy: amyEntries[0] || null,
+                michael: michaelEntries[0] || null
+            };
         }
 
         function displayHangoutData(data) {
@@ -183,44 +277,91 @@
             const hangoutContainer = document.getElementById('hangout-data');
             let html = '';
             
-            // Recent hangout card
-            if (data.recent_hangout) {
-                html += `
-                    <div class="hangout-card">
-                        <div class="card-title">🎉 Most Recent Hangout</div>
-                        <div class="card-date">${data.recent_hangout.date_string}</div>
-                        <div class="card-user">${data.recent_hangout.user}</div>
-                        <div class="card-memory">
-                            <strong>Good Memory:</strong><br>
-                            ${data.recent_hangout.good_memory || 'No memory recorded'}
+            // Status summary section
+            html += `
+                <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
+                    <div class="card-title">📊 Status Summary</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div>
+                            <strong>Last Hangout:</strong><br>
+                            <span style="color: #f595eb; font-weight: bold;">${data.status.last_hangout_date || 'No data'}</span>
                         </div>
-                        <div class="card-activities">
-                            <strong>Activities:</strong> ${data.recent_hangout.activities || 'None listed'}
+                        <div>
+                            <strong>Last Minecraft:</strong><br>
+                            <span style="color: #ffa500; font-weight: bold;">${data.status.last_minecraft_date || 'No data'}</span>
+                        </div>
+                        <div>
+                            <strong>Last Kiss:</strong><br>
+                            <span style="color: #f595eb; font-weight: bold;">${data.status.last_kiss_date || 'No data'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Last entries for each user
+            if (data.last_entries.amy || data.last_entries.michael) {
+                html += `
+                    <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
+                        <div class="card-title">👥 Last Survey Responses</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                `;
+                
+                if (data.last_entries.amy) {
+                    html += `
+                        <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #f595eb;">
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <div class="card-user" style="background: #f595eb;">Amy</div>
+                                <div style="font-size: 0.9rem; color: #666;">${data.last_entries.amy['Timestamp']}</div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Still Like:</strong> ${data.last_entries.amy['Do you still like me? '] || 'N/A'}
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Relationship Strength:</strong> ${data.last_entries.amy['How strong do you think our relationship is?'] || 'N/A'}/5
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Stress Level:</strong> ${data.last_entries.amy['How stressed are you about things outside of our relationship? '] || 'N/A'}/10
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Good Memory:</strong><br>
+                                <span style="font-size: 0.9rem;">${data.last_entries.amy["What's a good memory from this hangout (or relationship)? "] || 'No memory recorded'}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (data.last_entries.michael) {
+                    html += `
+                        <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #ffa500;">
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <div class="card-user" style="background: #ffa500;">Michael</div>
+                                <div style="font-size: 0.9rem; color: #666;">${data.last_entries.michael['Timestamp']}</div>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Still Like:</strong> ${data.last_entries.michael['Do you still like me? '] || 'N/A'}
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Relationship Strength:</strong> ${data.last_entries.michael['How strong do you think our relationship is?'] || 'N/A'}/5
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Stress Level:</strong> ${data.last_entries.michael['How stressed are you about things outside of our relationship? '] || 'N/A'}/10
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Good Memory:</strong><br>
+                                <span style="font-size: 0.9rem;">${data.last_entries.michael["What's a good memory from this hangout (or relationship)? "] || 'No memory recorded'}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
                         </div>
                     </div>
                 `;
             }
             
-            // Minecraft hangout card
-            if (data.recent_minecraft) {
-                html += `
-                    <div class="hangout-card minecraft">
-                        <div class="card-title">🎮 Last Minecraft Session</div>
-                        <div class="card-date">${data.recent_minecraft.date_string}</div>
-                        <div class="card-user">${data.recent_minecraft.user}</div>
-                        <div class="card-memory">
-                            <strong>Good Memory:</strong><br>
-                            ${data.recent_minecraft.good_memory || 'No memory recorded'}
-                        </div>
-                        <div class="card-activities">
-                            <strong>Activities:</strong> ${data.recent_minecraft.activities || 'None listed'}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            if (!data.recent_hangout && !data.recent_minecraft) {
-                html = '<div class="error">No hangout data found!</div>';
+            if (!data.status.last_hangout_date && !data.last_entries.amy && !data.last_entries.michael) {
+                html = '<div class="error">No data found!</div>';
             }
             
             hangoutContainer.innerHTML = html;
