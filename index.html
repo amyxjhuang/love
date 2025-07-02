@@ -206,6 +206,34 @@
             };
         }
 
+        function formatDate(dateString) {
+            if (!dateString) return 'No data';
+            try {
+                const date = new Date(dateString);
+                const options = { month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('en-US', options);
+            } catch (error) {
+                return dateString; // Return original if parsing fails
+            }
+        }
+
+        function formatTimestamp(timestampString) {
+            if (!timestampString) return 'No data';
+            try {
+                const date = new Date(timestampString);
+                const options = { 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                };
+                return date.toLocaleDateString('en-US', options);
+            } catch (error) {
+                return timestampString; // Return original if parsing fails
+            }
+        }
+
         function getStatus(records) {
             // Find most recent hangout
             const hangoutEntries = records.filter(record => 
@@ -241,9 +269,9 @@
             });
             
             return {
-                last_hangout_date: hangoutEntries[0] ? hangoutEntries[0]['What day is this for? '] : null,
-                last_minecraft_date: minecraftEntries[0] ? minecraftEntries[0]['What day is this for? '] : null,
-                last_kiss_date: kissEntries[0] ? kissEntries[0]['What day is this for? '] : null
+                last_hangout_date: hangoutEntries[0] ? formatDate(hangoutEntries[0]['What day is this for? ']) : null,
+                last_minecraft_date: minecraftEntries[0] ? formatDate(minecraftEntries[0]['What day is this for? ']) : null,
+                last_kiss_date: kissEntries[0] ? formatDate(kissEntries[0]['What day is this for? ']) : null
             };
         }
 
@@ -307,20 +335,24 @@
                 `;
                 
                 if (data.last_entries.amy) {
+                    let strength = parseInt(data.last_entries.amy['How strong do you think our relationship is?']) || 0;
+                    let stress = parseInt(data.last_entries.amy['How stressed are you about things outside of our relationship? ']) || 0;
+                    let strengthHearts = '💕'.repeat(strength);
+                    let stressHearts = '💕'.repeat(stress);
                     html += `
                         <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #f595eb;">
                             <div style="text-align: center; margin-bottom: 15px;">
                                 <div class="card-user" style="background: #f595eb;">Amy</div>
-                                <div style="font-size: 0.9rem; color: #666;">${data.last_entries.amy['Timestamp']}</div>
+                                <div style="font-size: 0.9rem; color: #666;">${formatTimestamp(data.last_entries.amy['Timestamp'])}</div>
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Still Like:</strong> ${data.last_entries.amy['Do you still like me? '] || 'N/A'}
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Relationship Strength:</strong> ${data.last_entries.amy['How strong do you think our relationship is?'] || 'N/A'}/5
+                                <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Stress Level:</strong> ${data.last_entries.amy['How stressed are you about things outside of our relationship? '] || 'N/A'}/10
+                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/10)
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Good Memory:</strong><br>
@@ -331,6 +363,10 @@
                 }
                 
                 if (data.last_entries.michael) {
+                    let strength = parseInt(data.last_entries.michael['How strong do you think our relationship is?']) || 0;
+                    let stress = parseInt(data.last_entries.michael['How stressed are you about things outside of our relationship? ']) || 0;
+                    let strengthHearts = '❤️'.repeat(strength);
+                    let stressHearts = '😫'.repeat(stress);
                     html += `
                         <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #ffa500;">
                             <div style="text-align: center; margin-bottom: 15px;">
@@ -341,10 +377,10 @@
                                 <strong>Still Like:</strong> ${data.last_entries.michael['Do you still like me? '] || 'N/A'}
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Relationship Strength:</strong> ${data.last_entries.michael['How strong do you think our relationship is?'] || 'N/A'}/5
+                                <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Stress Level:</strong> ${data.last_entries.michael['How stressed are you about things outside of our relationship? '] || 'N/A'}/10
+                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/10)
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Good Memory:</strong><br>
