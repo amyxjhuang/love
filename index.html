@@ -186,7 +186,7 @@
             const headers = data.table.cols.map(col => col.label);
             
             // Convert to array of objects
-            const records = rows.slice(1).map(row => {
+            const records = rows.map(row => {
                 const obj = {};
                 row.c.forEach((cell, index) => {
                     if (cell && cell.f) {
@@ -198,7 +198,9 @@
                 });
                 return obj;
             });
-            
+            console.log(records.length)
+            const memoriesAndWorries = getAllMemoriesAndWorries(records);
+
             console.log('Processed records:', records.slice(0, 2)); // Debug first 2 records
             
             // Get status summary
@@ -207,9 +209,12 @@
             // Get last entries for each user
             const lastEntries = getLastEntries(records);
             
+            // Get all memories and worries
+            
             return {
                 status: status,
-                last_entries: lastEntries
+                last_entries: lastEntries,
+                memories_and_worries: memoriesAndWorries
             };
         }
 
@@ -354,6 +359,49 @@
             };
         }
 
+        function getAllMemoriesAndWorries(records) {
+            const memories_and_worries = [];
+            
+            records.forEach(record => {
+                const user = record['Who is filling this out right now.'];
+                const timestamp = record['Timestamp'];
+                const date = record['What day is this for? '];
+                
+                // Collect good memories
+                const memory = record["What's a good memory from this hangout (or relationship)? "];
+                if (memory && memory.trim()) {
+                    memories_and_worries.push({
+                        user: user,
+                        type: 'memory',
+                        text: memory,
+                        timestamp: timestamp,
+                        date: date
+                    });
+                }
+                
+                // Collect worries
+                const worry = record["What's something you're worried about? "];
+                if (worry && worry.trim()) {
+                    memories_and_worries.push({
+                        user: user,
+                        type: 'worry',
+                        text: worry,
+                        timestamp: timestamp,
+                        date: date
+                    });
+                }
+            });
+                
+            // Sort by timestamp (most recent first)
+            memories_and_worries.sort((a, b) => {
+                const dateA = new Date(a.timestamp);
+                const dateB = new Date(b.timestamp);
+                return dateB - dateA;
+            });
+            console.log(memories_and_worries)
+            return memories_and_worries;
+        }
+
         function displayHangoutData(data) {
             document.getElementById('loading').style.display = 'none';
             
@@ -451,7 +499,37 @@
                 `;
             }
             
-            if (!data.status.last_hangout_date && !data.last_entries.amy && !data.last_entries.michael) {
+            // Combined Memories and Worries section
+            console.log('All memories and worries:', data.memories_and_worries);
+            
+            if (data.memories_and_worries && data.memories_and_worries.length > 0) {
+                html += `
+                    <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
+                        <div class="card-title">💭 Memories & Worries</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                `;
+                
+                data.memories_and_worries.forEach(thought => {
+                    const userColor = thought.user === 'Amy' ? '#f595eb' : '#ffa500';
+                    const emoji = thought.type === 'memory' ? '💖' : '😰';
+                    html += `
+                        <div style="background: white; padding: 15px; border-radius: 10px; border: 2px solid ${userColor};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div style="font-size: 1.2rem;">${emoji}</div>
+                                <div style="font-size: 0.8rem; color: #666;">${formatDate(thought.date)}</div>
+                            </div>
+                            <div style="font-size: 0.9rem; line-height: 1.4;">${thought.text}</div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (!data.status.last_hangout_date && !data.last_entries.amy && !data.last_entries.michael && (!data.memories_and_worries || data.memories_and_worries.length === 0)) {
                 html = '<div class="error">No data found!</div>';
             }
             
