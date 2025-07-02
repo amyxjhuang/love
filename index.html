@@ -213,6 +213,65 @@
             color: #f595eb;
             font-weight: bold;
         }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px 2px;
+                border-radius: 10px;
+                width: 100% !important;
+                max-width: none !important;
+                box-sizing: border-box;
+            }
+            .hangout-card {
+                padding: 12px 6px !important;
+                border-radius: 10px !important;
+                margin-bottom: 18px !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.04) !important;
+                width: 100% !important;
+                box-sizing: border-box;
+                overflow-wrap: break-word;
+            }
+            .card-title {
+                font-size: 1.1rem !important;
+                margin-bottom: 10px !important;
+            }
+            .bubble-list {
+                gap: 16px !important;
+            }
+            .bubble {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 14px 10px 14px 10px !important;
+                border-radius: 13px !important;
+                font-size: 1rem !important;
+                min-height: 40px;
+                margin-left: 0 !important;
+                box-sizing: border-box;
+                overflow-wrap: break-word;
+            }
+            .bubble-emoji {
+                font-size: 1.3rem !important;
+                margin-right: 8px !important;
+            }
+            .bubble-text {
+                font-size: 1rem !important;
+                overflow-wrap: break-word;
+            }
+            .bubble-date {
+                font-size: 0.85rem !important;
+                margin-left: 4px !important;
+            }
+            .status-summary-list {
+                gap: 8px !important;
+            }
+            .status-summary-label {
+                font-size: 0.98rem !important;
+                min-width: 90px !important;
+            }
+            .status-summary-value {
+                font-size: 0.98rem !important;
+            }
+        }
     </style>
 </head>
 <body>
