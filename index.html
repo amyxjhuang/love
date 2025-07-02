@@ -390,6 +390,17 @@
                         date: date
                     });
                 }
+
+                const other = record["Anything else to note?"]
+                if (other && other.trim()) {
+                    memories_and_worries.push({
+                        user: user,
+                        type: 'other',
+                        text: other,
+                        timestamp: timestamp,
+                        date: date
+                    });
+                }
             });
                 
             // Sort by timestamp (most recent first)
@@ -511,7 +522,7 @@
                 
                 data.memories_and_worries.forEach(thought => {
                     const userColor = thought.user === 'Amy' ? '#f595eb' : '#ffa500';
-                    const emoji = thought.type === 'memory' ? '💖' : '😰';
+                    const emoji = thought.type === 'memory' ? '💖' : thought.type === 'worry' ? '😰' : '💭';
                     html += `
                         <div style="background: white; padding: 15px; border-radius: 10px; border: 2px solid ${userColor};">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
