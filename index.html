@@ -135,6 +135,52 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .bubble-list {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            margin-top: 10px;
+        }
+        .bubble {
+            display: flex;
+            align-items: flex-start;
+            max-width: 90%;
+            margin-left: 0;
+            background: #ffe6f7;
+            border-radius: 22px;
+            box-shadow: 0 4px 16px rgba(245,149,235,0.10);
+            padding: 26px 28px 26px 24px;
+            position: relative;
+            font-size: 1.18rem;
+            font-family: 'Times New Roman', Times, serif;
+            color: #333;
+            min-height: 60px;
+            transition: background 0.2s;
+        }
+        .bubble.michael {
+            background: #fff3e0;
+            box-shadow: 0 4px 16px rgba(255,165,0,0.10);
+        }
+        .bubble-emoji {
+            font-size: 2.1rem;
+            margin-right: 18px;
+            flex-shrink: 0;
+            margin-top: -2px;
+        }
+        .bubble-date {
+            font-size: 1.02rem;
+            color: #aaa;
+            margin-top: 8px;
+            margin-left: 8px;
+        }
+        .bubble-text {
+            flex: 1;
+            z-index: 1;
+            word-break: break-word;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 1.18rem;
+        }
     </style>
 </head>
 <body>
@@ -444,7 +490,6 @@
             if (data.last_entries.amy || data.last_entries.michael) {
                 html += `
                     <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
-                        <div class="card-title">👥 Last Survey Responses</div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                 `;
                 
@@ -515,25 +560,22 @@
             
             if (data.memories_and_worries && data.memories_and_worries.length > 0) {
                 html += `
-                    <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
-                        <div class="card-title">💭 Memories & Worries</div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                    <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px; background: transparent; border: none; box-shadow: none;">
+                        <div class="bubble-list">
                 `;
-                
                 data.memories_and_worries.forEach(thought => {
-                    const userColor = thought.user === 'Amy' ? '#f595eb' : '#ffa500';
+                    const isMichael = thought.user === 'Michael';
+                    const bubbleClass = isMichael ? 'bubble michael' : 'bubble';
                     const emoji = thought.type === 'memory' ? '💖' : thought.type === 'worry' ? '😰' : '💭';
                     html += `
-                        <div style="background: white; padding: 15px; border-radius: 10px; border: 2px solid ${userColor};">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <div style="font-size: 1.2rem;">${emoji}</div>
-                                <div style="font-size: 0.8rem; color: #666;">${formatDate(thought.date)}</div>
-                            </div>
-                            <div style="font-size: 0.9rem; line-height: 1.4;">${thought.text}</div>
+                        <div class="${bubbleClass}">
+                            <span class="bubble-emoji">${emoji}</span>
+                            <span class="bubble-text">${thought.text}
+                                <span class="bubble-date">${formatDate(thought.date)}</span>
+                            </span>
                         </div>
                     `;
                 });
-                
                 html += `
                         </div>
                     </div>
