@@ -189,10 +189,17 @@
             const records = rows.slice(1).map(row => {
                 const obj = {};
                 row.c.forEach((cell, index) => {
-                    obj[headers[index]] = cell ? cell.v : '';
+                    if (cell && cell.f) {
+                        // Use formatted value if available (this preserves the original date format)
+                        obj[headers[index]] = cell.f;
+                    } else {
+                        obj[headers[index]] = cell ? cell.v : '';
+                    }
                 });
                 return obj;
             });
+            
+            console.log('Processed records:', records.slice(0, 2)); // Debug first 2 records
             
             // Get status summary
             const status = getStatus(records);
@@ -209,10 +216,30 @@
         function formatDate(dateString) {
             if (!dateString) return 'No data';
             try {
-                const date = new Date(dateString);
+                // Handle different date formats
+                let date;
+                if (dateString.includes('/')) {
+                    // Format like "6/29/25" or "6/29/2025"
+                    const parts = dateString.split('/');
+                    const month = parseInt(parts[0]) - 1; // Month is 0-indexed
+                    const day = parseInt(parts[1]) + 1;
+                    const year = parseInt(parts[2]);
+                    // Handle 2-digit years
+                    const fullYear = year < 100 ? 2000 + year : year;
+                    date = new Date(fullYear, month, day);
+                } else {
+                    // Try parsing as is
+                    date = new Date(dateString);
+                }
+                
+                if (isNaN(date.getTime())) {
+                    return dateString; // Return original if parsing fails
+                }
+                
                 const options = { month: 'long', day: 'numeric' };
                 return date.toLocaleDateString('en-US', options);
             } catch (error) {
+                console.error('Date parsing error:', error, 'for date:', dateString);
                 return dateString; // Return original if parsing fails
             }
         }
@@ -220,7 +247,34 @@
         function formatTimestamp(timestampString) {
             if (!timestampString) return 'No data';
             try {
-                const date = new Date(timestampString);
+                // Handle different timestamp formats
+                let date;
+                if (timestampString.includes('/') && timestampString.includes(':')) {
+                    // Format like "6/30/2025 9:58:01"
+                    const parts = timestampString.split(' ');
+                    const datePart = parts[0];
+                    const timePart = parts[1];
+                    
+                    const dateParts = datePart.split('/');
+                    const month = parseInt(dateParts[0]) - 1;
+                    const day = parseInt(dateParts[1]);
+                    const year = parseInt(dateParts[2]);
+                    const fullYear = year < 100 ? 2000 + year : year;
+                    
+                    const timeParts = timePart.split(':');
+                    const hour = parseInt(timeParts[0]);
+                    const minute = parseInt(timeParts[1]);
+                    const second = parseInt(timeParts[2]);
+                    
+                    date = new Date(fullYear, month, day, hour, minute, second);
+                } else {
+                    date = new Date(timestampString);
+                }
+                
+                if (isNaN(date.getTime())) {
+                    return timestampString;
+                }
+                
                 const options = { 
                     month: 'long', 
                     day: 'numeric',
@@ -230,7 +284,8 @@
                 };
                 return date.toLocaleDateString('en-US', options);
             } catch (error) {
-                return timestampString; // Return original if parsing fails
+                console.error('Timestamp parsing error:', error, 'for timestamp:', timestampString);
+                return timestampString;
             }
         }
 
@@ -267,7 +322,7 @@
                 const dateB = new Date(b['What day is this for? ']);
                 return dateB - dateA;
             });
-            
+            console.log('Most recent hangout:', hangoutEntries[0]);
             return {
                 last_hangout_date: hangoutEntries[0] ? formatDate(hangoutEntries[0]['What day is this for? ']) : null,
                 last_minecraft_date: minecraftEntries[0] ? formatDate(minecraftEntries[0]['What day is this for? ']) : null,
@@ -337,16 +392,16 @@
                 if (data.last_entries.amy) {
                     let strength = parseInt(data.last_entries.amy['How strong do you think our relationship is?']) || 0;
                     let stress = parseInt(data.last_entries.amy['How stressed are you about things outside of our relationship? ']) || 0;
-                    let strengthHearts = '💕'.repeat(strength);
-                    let stressHearts = '💕'.repeat(stress);
+                    let strengthHearts = '❤️'.repeat(strength);
+                    let stressHearts = '😫'.repeat(stress);
                     html += `
                         <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #f595eb;">
                             <div style="text-align: center; margin-bottom: 15px;">
                                 <div class="card-user" style="background: #f595eb;">Amy</div>
-                                <div style="font-size: 0.9rem; color: #666;">${formatTimestamp(data.last_entries.amy['Timestamp'])}</div>
+                                <div style="font-size: 0.9rem; color: #666;">As of ${formatTimestamp(data.last_entries.amy['Timestamp'])}</div>
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Still Like:</strong> ${data.last_entries.amy['Do you still like me? '] || 'N/A'}
+                                <strong>Likes Michael:</strong> ${data.last_entries.amy['Do you still like me? '] || 'N/A'}
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
@@ -371,10 +426,10 @@
                         <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #ffa500;">
                             <div style="text-align: center; margin-bottom: 15px;">
                                 <div class="card-user" style="background: #ffa500;">Michael</div>
-                                <div style="font-size: 0.9rem; color: #666;">${data.last_entries.michael['Timestamp']}</div>
+                                <div style="font-size: 0.9rem; color: #666;">As of ${formatTimestamp(data.last_entries.michael['Timestamp'])}</div>
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Still Like:</strong> ${data.last_entries.michael['Do you still like me? '] || 'N/A'}
+                                <strong>Likes Amy:</strong> ${data.last_entries.michael['Do you still like me? '] || 'N/A'}
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
