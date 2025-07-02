@@ -181,6 +181,38 @@
             font-family: 'Times New Roman', Times, serif;
             font-size: 1.18rem;
         }
+        .status-summary-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            align-items: flex-start;
+            margin-top: 10px;
+            margin-bottom: 6px;
+        }
+        .status-summary-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            font-size: 1.13rem;
+            color: #333;
+            gap: 10px;
+        }
+        .status-summary-label {
+            font-weight: bold;
+            min-width: 130px;
+        }
+        .status-summary-value.hangout {
+            color: #f595eb;
+            font-weight: bold;
+        }
+        .status-summary-value.minecraft {
+            color: #ffa500;
+            font-weight: bold;
+        }
+        .status-summary-value.kiss {
+            color: #f595eb;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -257,10 +289,16 @@
             
             // Get all memories and worries
             
+            const monogamous = !records.some(
+                record => (record['Select all that you feel is true '] || '').toLowerCase().includes('non monogamous')
+            );
+            console.log('monogamous:', monogamous);
+            
             return {
                 status: status,
                 last_entries: lastEntries,
-                memories_and_worries: memoriesAndWorries
+                memories_and_worries: memoriesAndWorries,
+                monogamous: monogamous
             };
         }
 
@@ -469,18 +507,22 @@
             html += `
                 <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
                     <div class="card-title">📊 Status Summary</div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        <div>
-                            <strong>Last Hangout:</strong><br>
-                            <span style="color: #f595eb; font-weight: bold;">${data.status.last_hangout_date || 'No data'}</span>
+                    <div class="status-summary-list">
+                        <div class="status-summary-item">
+                            <span class="status-summary-label">😎 last hangout:</span>
+                            <span class="status-summary-value hangout">${data.status.last_hangout_date || 'No data'}</span>
                         </div>
-                        <div>
-                            <strong>Last Minecraft:</strong><br>
-                            <span style="color: #ffa500; font-weight: bold;">${data.status.last_minecraft_date || 'No data'}</span>
+                        <div class="status-summary-item">
+                            <span class="status-summary-label">⛏️ last Minecraft day:</span>
+                            <span class="status-summary-value minecraft">${data.status.last_minecraft_date || 'No data'}</span>
                         </div>
-                        <div>
-                            <strong>Last Kiss:</strong><br>
-                            <span style="color: #f595eb; font-weight: bold;">${data.status.last_kiss_date || 'No data'}</span>
+                        <div class="status-summary-item">
+                            <span class="status-summary-label">💋 last Kiss:</span>
+                            <span class="status-summary-value kiss">${data.status.last_kiss_date || 'No data'}</span>
+                        </div>
+                        <div class="status-summary-item">
+                            <span class="status-summary-label">MONOGAMOUS?</span>
+                            <span class="status-summary-value kiss">${data.monogamous ? '✅ Yes' : 'no'}</span>
                         </div>
                     </div>
                 </div>
