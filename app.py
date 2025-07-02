@@ -112,6 +112,13 @@ def all_data():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/test')
+def test():
+    return jsonify({
+        "message": "API is working!",
+        "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    })
+
 # For Vercel deployment
 app.debug = True
 
