@@ -40,35 +40,12 @@ def home():
     return jsonify({
         "message": "Relationship Dashboard API",
         "endpoints": {
-            "/hangout": "Get most recent hangout",
-            "/minecraft": "Get most recent Minecraft hangout",
-            "/all": "Get status summary and last entries",
             "/status": "Get status summary only",
-            "/last-entries": "Get last entries for each user"
+            "/last-entries": "Get last entries for each user",
+            "/test": "Test endpoint"
         }
     })
 
-@app.route('/hangout')
-def hangout():
-    try:
-        data = get_recent_hangout()
-        if data:
-            # Convert datetime to string for JSON serialization
-            data['date'] = data['date'].strftime('%Y-%m-%d')
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/minecraft')
-def minecraft():
-    try:
-        data = get_recent_minecraft_hangout()
-        if data:
-            # Convert datetime to string for JSON serialization
-            data['date'] = data['date'].strftime('%Y-%m-%d')
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/status')
 def status():
@@ -90,27 +67,27 @@ def last_entries():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/all')
-def all_data():
-    try:
-        # Get status summary
-        status_data = get_status()
+# @app.route('/all')
+# def all_data():
+#     try:
+#         # Get status summary
+#         status_data = get_status()
         
-        # Get last entries for each user
-        last_entries_data = get_last_entry()
+#         # Get last entries for each user
+#         last_entries_data = get_last_entry()
         
-        # Convert datetime objects to strings for JSON serialization
-        if last_entries_data['amy']:
-            last_entries_data['amy']['date'] = last_entries_data['amy']['date'].strftime('%Y-%m-%d %H:%M:%S')
-        if last_entries_data['michael']:
-            last_entries_data['michael']['date'] = last_entries_data['michael']['date'].strftime('%Y-%m-%d %H:%M:%S')
+#         # Convert datetime objects to strings for JSON serialization
+#         if last_entries_data['amy']:
+#             last_entries_data['amy']['date'] = last_entries_data['amy']['date'].strftime('%Y-%m-%d %H:%M:%S')
+#         if last_entries_data['michael']:
+#             last_entries_data['michael']['date'] = last_entries_data['michael']['date'].strftime('%Y-%m-%d %H:%M:%S')
         
-        return jsonify({
-            'status': status_data,
-            'last_entries': last_entries_data
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+#         return jsonify({
+#             'status': status_data,
+#             'last_entries': last_entries_data
+#         })
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
 @app.route('/test')
 def test():
