@@ -1,2 +1,7 @@
+google-auth
+python-dotenv
 Flask
-Flask-CORS
+Flask-CORS 
+vercel
+gspread
+google-auth
