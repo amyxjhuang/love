@@ -40,32 +40,30 @@ def home():
     return jsonify({
         "message": "Relationship Dashboard API",
         "endpoints": {
-            "/status": "Get status summary only",
-            "/last-entries": "Get last entries for each user",
             "/test": "Test endpoint"
         }
     })
 
 
-@app.route('/status')
-def status():
-    try:
-        return jsonify(get_status())
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# @app.route('/status')
+# def status():
+#     try:
+#         return jsonify(get_status())
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
-@app.route('/last-entries')
-def last_entries():
-    try:
-        data = get_last_entry()
-        # Convert datetime objects to strings for JSON serialization
-        if data['amy']:
-            data['amy']['date'] = data['amy']['date'].strftime('%Y-%m-%d %H:%M:%S')
-        if data['michael']:
-            data['michael']['date'] = data['michael']['date'].strftime('%Y-%m-%d %H:%M:%S')
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# @app.route('/last-entries')
+# def last_entries():
+#     try:
+#         data = get_last_entry()
+#         # Convert datetime objects to strings for JSON serialization
+#         if data['amy']:
+#             data['amy']['date'] = data['amy']['date'].strftime('%Y-%m-%d %H:%M:%S')
+#         if data['michael']:
+#             data['michael']['date'] = data['michael']['date'].strftime('%Y-%m-%d %H:%M:%S')
+#         return jsonify(data)
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
 # @app.route('/all')
 # def all_data():
@@ -102,4 +100,3 @@ app.debug = True
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port) 
-    
