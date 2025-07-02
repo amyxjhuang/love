@@ -18,19 +18,38 @@ if SERVICE_ACCOUNT_JSON:
         f.write(SERVICE_ACCOUNT_JSON)
         SERVICE_ACCOUNT_FILE = f.name
 else:
+    # Try to use the local file
     SERVICE_ACCOUNT_FILE = 'amyhuang-49fcaf834c17.json'
+    if not os.path.exists(SERVICE_ACCOUNT_FILE):
+        print(f"Warning: Service account file {SERVICE_ACCOUNT_FILE} not found")
+        SERVICE_ACCOUNT_FILE = None
 
 # Define the scope
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-# Authenticate and create the client
-creds = Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-client = gspread.authorize(creds)
-
-# Get the Google Sheet URL from environment variable
-SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
-worksheet = client.open_by_url(SHEET_URL).sheet1
+# Only try to authenticate if we have a service account file
+if SERVICE_ACCOUNT_FILE and os.path.exists(SERVICE_ACCOUNT_FILE):
+    try:
+        # Authenticate and create the client
+        creds = Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+        client = gspread.authorize(creds)
+        
+        # Get the Google Sheet URL from environment variable
+        SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
+        if SHEET_URL:
+            worksheet = client.open_by_url(SHEET_URL).sheet1
+        else:
+            print("Warning: GOOGLE_SHEET_URL environment variable not set")
+            worksheet = None
+    except Exception as e:
+        print(f"Error setting up Google Sheets: {e}")
+        client = None
+        worksheet = None
+else:
+    print("Warning: No service account file available")
+    client = None
+    worksheet = None
 
 app = Flask(__name__)
 CORS(app, origins=["*"])  # Allow requests from any origin
@@ -50,6 +69,8 @@ def home():
 @app.route('/status')
 def status():
     try:
+        if worksheet is None:
+            return jsonify({"error": "Google Sheets not configured"}), 500
         return jsonify(get_status())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -57,6 +78,8 @@ def status():
 @app.route('/last-entries')
 def last_entries():
     try:
+        if worksheet is None:
+            return jsonify({"error": "Google Sheets not configured"}), 500
         data = get_last_entry()
         # Convert datetime objects to strings for JSON serialization
         if data['amy']:
