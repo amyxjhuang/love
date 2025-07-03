@@ -294,71 +294,24 @@
     </div>
 
     <script>
-        // Change this to your public Google Sheet URL
-        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1HBrwFrSRBhiRsGPYI7ItChttzdtHFbPuaNCq6LKE15I/gviz/tq?tqx=out:json';
+        // Backend API URL - change this to your deployed backend URL
+        // const API_URL = 'http://localhost:5001/hangout-data'; // For local development
+        const API_URL = 'https://love-tau-gilt.vercel.app/hangout-data'; // For production
         
         async function loadHangoutData() {
             try {
-                const response = await fetch(SHEET_URL);
+                const response = await fetch(API_URL);
                 if (!response.ok) {
-                    throw new Error('Failed to load sheet data');
+                    throw new Error('Failed to load data from API');
                 }
                 
-                const text = await response.text();
-                // Google Sheets returns data wrapped in a function call, we need to extract it
-                const jsonText = text.substring(47).slice(0, -2); // Remove the wrapper
-                const data = JSON.parse(jsonText);
-                
-                const processedData = processSheetData(data);
-                displayHangoutData(processedData);
+                const data = await response.json();
+                displayHangoutData(data);
             } catch (error) {
                 console.error('Error loading hangout data:', error);
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error').style.display = 'block';
             }
-        }
-
-        function processSheetData(data) {
-            const rows = data.table.rows;
-            const headers = data.table.cols.map(col => col.label);
-            
-            // Convert to array of objects
-            const records = rows.map(row => {
-                const obj = {};
-                row.c.forEach((cell, index) => {
-                    if (cell && cell.f) {
-                        // Use formatted value if available (this preserves the original date format)
-                        obj[headers[index]] = cell.f;
-                    } else {
-                        obj[headers[index]] = cell ? cell.v : '';
-                    }
-                });
-                return obj;
-            });
-            console.log(records.length)
-            const memoriesAndWorries = getAllMemoriesAndWorries(records);
-
-            console.log('Processed records:', records.slice(0, 2)); // Debug first 2 records
-            
-            // Get status summary
-            const status = getStatus(records);
-            
-            // Get last entries for each user
-            const lastEntries = getLastEntries(records);
-            
-            // Get all memories and worries
-            
-            const monogamous = !records.some(
-                record => (record['Select all that you feel is true '] || '').toLowerCase().includes('non monogamous')
-            );
-            console.log('monogamous:', monogamous);
-            
-            return {
-                status: status,
-                last_entries: lastEntries,
-                memories_and_worries: memoriesAndWorries,
-                monogamous: monogamous
-            };
         }
 
         function formatDate(dateString) {
@@ -370,7 +323,7 @@
                     // Format like "6/29/25" or "6/29/2025"
                     const parts = dateString.split('/');
                     const month = parseInt(parts[0]) - 1; // Month is 0-indexed
-                    const day = parseInt(parts[1]) + 1;
+                    const day = parseInt(parts[1]);
                     const year = parseInt(parts[2]);
                     // Handle 2-digit years
                     const fullYear = year < 100 ? 2000 + year : year;
@@ -470,7 +423,7 @@
                 const dateB = new Date(b['What day is this for? ']);
                 return dateB - dateA;
             });
-            console.log('Most recent hangout:', hangoutEntries[0]);
+            // console.log('Most recent hangout:', hangoutEntries[0]);
             return {
                 last_hangout_date: hangoutEntries[0] ? formatDate(hangoutEntries[0]['What day is this for? ']) : null,
                 last_minecraft_date: minecraftEntries[0] ? formatDate(minecraftEntries[0]['What day is this for? ']) : null,
@@ -552,7 +505,7 @@
                 const dateB = new Date(b.timestamp);
                 return dateB - dateA;
             });
-            console.log(memories_and_worries)
+            // console.log(memories_and_worries)
             return memories_and_worries;
         }
 
@@ -578,10 +531,6 @@
                         <div class="status-summary-item">
                             <span class="status-summary-label">💋 last Kiss:</span>
                             <span class="status-summary-value kiss">${data.status.last_kiss_date || 'No data'}</span>
-                        </div>
-                        <div class="status-summary-item">
-                            <span class="status-summary-label">MONOGAMOUS?</span>
-                            <span class="status-summary-value kiss">${data.monogamous ? '✅ Yes' : 'no'}</span>
                         </div>
                     </div>
                 </div>
@@ -612,7 +561,7 @@
                                 <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/5)
+                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/10)
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Current Feelings:</strong><br>
@@ -640,7 +589,7 @@
                                 <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/5)
+                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/10)
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Current Feelings:</strong><br>
@@ -657,7 +606,7 @@
             }
             
             // Combined Memories and Worries section
-            console.log('All memories and worries:', data.memories_and_worries);
+            // console.log('All memories and worries:', data.memories_and_worries);
             
             if (data.memories_and_worries && data.memories_and_worries.length > 0) {
                 html += `
