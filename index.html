@@ -402,10 +402,6 @@
                     <div class="card-title">📊 Status Summary</div>
                     <div class="status-summary-list">
                         <div class="status-summary-item">
-                            <span class="status-summary-label">😎 last hangout:</span>
-                            <span class="status-summary-value hangout">${data.status.last_hangout_date || 'No data'}</span>
-                        </div>
-                        <div class="status-summary-item">
                             <span class="status-summary-label">⛏️ last Minecraft day:</span>
                             <span class="status-summary-value minecraft">${data.status.last_minecraft_date || 'No data'}</span>
                         </div>
@@ -413,8 +409,11 @@
                             <span class="status-summary-label">💋 last Kiss:</span>
                             <span class="status-summary-value kiss">${data.status.last_kiss_date || 'No data'}</span>
                         </div>
+                        ${data.monogamous ? `<div class="status-summary-item">
+                            <span class="status-summary-label">✅ monogamous</span>
+                        </div>` : ''}
                         ${data.status.is_long_distance ? `<div class="status-summary-item">
-                            <span class="status-summary-label">Currently long distance</span>
+                            <span class="status-summary-label">💔 currently long distance</span>
                         </div>` : ''}
                     </div>
                 </div>
