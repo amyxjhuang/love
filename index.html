@@ -281,11 +281,11 @@
         <p>amy and michael</p>
         
         <div id="loading" class="loading">
-            Loading hangout data...
+            Loading relationship data...
         </div>
         
         <div id="error" class="error" style="display: none;">
-            Error loading hangout data. Please check if the API is running.
+            Error loading relationship data. Please check if the API is running.
         </div>
         
         <div id="hangout-data" class="hangout-cards" style="display: none;">
@@ -390,131 +390,12 @@
             }
         }
 
-        function getStatus(records) {
-            // Find most recent hangout
-            const hangoutEntries = records.filter(record => 
-                record['Did you hang out (in real life)? '] === 'Yes' && 
-                record['What day is this for? ']
-            ).sort((a, b) => {
-                const dateA = new Date(a['What day is this for? ']);
-                const dateB = new Date(b['What day is this for? ']);
-                return dateB - dateA;
-            });
-            
-            // Find most recent Minecraft hangout
-            const minecraftEntries = records.filter(record => 
-                record['Did you hang out (in real life)? '] === 'Yes' && 
-                record['What day is this for? '] &&
-                record['Check all that are true for this hangout.'].includes('We played Minecraft')
-            ).sort((a, b) => {
-                const dateA = new Date(a['What day is this for? ']);
-                const dateB = new Date(b['What day is this for? ']);
-                return dateB - dateA;
-            });
-            
-            // Find most recent kiss hangout
-            const kissEntries = records.filter(record => 
-                record['Did you hang out (in real life)? '] === 'Yes' && 
-                record['What day is this for? '] &&
-                (record['Check all that are true for this hangout.'].includes('We held hands and kissed') ||
-                 record['Check all that are true for this hangout.'].includes('We kissed'))
-            ).sort((a, b) => {
-                const dateA = new Date(a['What day is this for? ']);
-                const dateB = new Date(b['What day is this for? ']);
-                return dateB - dateA;
-            });
-            // console.log('Most recent hangout:', hangoutEntries[0]);
-            return {
-                last_hangout_date: hangoutEntries[0] ? formatDate(hangoutEntries[0]['What day is this for? ']) : null,
-                last_minecraft_date: minecraftEntries[0] ? formatDate(minecraftEntries[0]['What day is this for? ']) : null,
-                last_kiss_date: kissEntries[0] ? formatDate(kissEntries[0]['What day is this for? ']) : null
-            };
-        }
-
-        function getLastEntries(records) {
-            // Separate entries by user
-            const amyEntries = records.filter(record => record['Who is filling this out right now.'] === 'Amy');
-            const michaelEntries = records.filter(record => record['Who is filling this out right now.'] === 'Michael');
-            
-            // Sort by timestamp (most recent first)
-            amyEntries.sort((a, b) => {
-                const dateA = new Date(a['Timestamp']);
-                const dateB = new Date(b['Timestamp']);
-                return dateB - dateA;
-            });
-            
-            michaelEntries.sort((a, b) => {
-                const dateA = new Date(a['Timestamp']);
-                const dateB = new Date(b['Timestamp']);
-                return dateB - dateA;
-            });
-            
-            return {
-                amy: amyEntries[0] || null,
-                michael: michaelEntries[0] || null
-            };
-        }
-
-        function getAllMemoriesAndWorries(records) {
-            const memories_and_worries = [];
-            
-            records.forEach(record => {
-                const user = record['Who is filling this out right now.'];
-                const timestamp = record['Timestamp'];
-                const date = record['What day is this for? '];
-                
-                // Collect good memories
-                const memory = record["What's a good memory from this hangout (or relationship)? "];
-                if (memory && memory.trim()) {
-                    memories_and_worries.push({
-                        user: user,
-                        type: 'memory',
-                        text: memory,
-                        timestamp: timestamp,
-                        date: date
-                    });
-                }
-                
-                // Collect worries
-                const worry = record["What's something you're worried about? "];
-                if (worry && worry.trim()) {
-                    memories_and_worries.push({
-                        user: user,
-                        type: 'worry',
-                        text: worry,
-                        timestamp: timestamp,
-                        date: date
-                    });
-                }
-
-                const other = record["Anything else to note?"]
-                if (other && other.trim()) {
-                    memories_and_worries.push({
-                        user: user,
-                        type: 'other',
-                        text: other,
-                        timestamp: timestamp,
-                        date: date
-                    });
-                }
-            });
-                
-            // Sort by timestamp (most recent first)
-            memories_and_worries.sort((a, b) => {
-                const dateA = new Date(a.timestamp);
-                const dateB = new Date(b.timestamp);
-                return dateB - dateA;
-            });
-            // console.log(memories_and_worries)
-            return memories_and_worries;
-        }
-
         function displayHangoutData(data) {
             document.getElementById('loading').style.display = 'none';
             
             const hangoutContainer = document.getElementById('hangout-data');
             let html = '';
-            
+            // console.log(data.status)
             // Status summary section
             html += `
                 <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
@@ -532,6 +413,9 @@
                             <span class="status-summary-label">💋 last Kiss:</span>
                             <span class="status-summary-value kiss">${data.status.last_kiss_date || 'No data'}</span>
                         </div>
+                        ${data.status.is_long_distance ? `<div class="status-summary-item">
+                            <span class="status-summary-label">Currently long distance</span>
+                        </div>` : ''}
                     </div>
                 </div>
             `;

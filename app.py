@@ -59,46 +59,30 @@ def process_sheet_data(data):
     
     return records
 
-def get_status(records):
-    """Get status summary from records"""
-    # Find most recent hangout
-    hangout_entries = [r for r in records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ')]
+def process_records(records):
+    """Process and sort all records for efficient access"""
+    # Sort records by timestamp (most recent first)
+    sorted_records = sorted(records, key=lambda x: x.get('Timestamp', ''), reverse=True)
+    
+    # Separate entries by user (already sorted by timestamp)
+    amy_entries = [r for r in sorted_records if r.get('Who is filling this out right now.') == 'Amy']
+    michael_entries = [r for r in sorted_records if r.get('Who is filling this out right now.') == 'Michael']
+    
+    # Get hangout entries sorted by date (most recent first)
+    hangout_entries = [r for r in sorted_records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ')]
     hangout_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
     
-    # Find most recent Minecraft hangout
-    minecraft_entries = [r for r in records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ') and 'We played Minecraft' in r.get('Check all that are true for this hangout.', '')]
+    # Get Minecraft hangout entries sorted by date
+    minecraft_entries = [r for r in sorted_records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ') and 'We played Minecraft' in r.get('Check all that are true for this hangout.', '')]
     minecraft_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
     
-    # Find most recent kiss hangout
-    kiss_entries = [r for r in records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ') and ('We held hands and kissed' in r.get('Check all that are true for this hangout.', '') or 'We kissed' in r.get('Check all that are true for this hangout.', ''))]
+    # Get kiss hangout entries sorted by date
+    kiss_entries = [r for r in sorted_records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ') and ('We held hands and kissed' in r.get('Check all that are true for this hangout.', '') or 'We kissed' in r.get('Check all that are true for this hangout.', ''))]
     kiss_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
     
-    return {
-        'last_hangout_date': hangout_entries[0]['What day is this for? '] if hangout_entries else None,
-        'last_minecraft_date': minecraft_entries[0]['What day is this for? '] if minecraft_entries else None,
-        'last_kiss_date': kiss_entries[0]['What day is this for? '] if kiss_entries else None
-    }
-
-def get_last_entries(records):
-    """Get last entries for each user"""
-    # Separate entries by user
-    amy_entries = [r for r in records if r.get('Who is filling this out right now.') == 'Amy']
-    michael_entries = [r for r in records if r.get('Who is filling this out right now.') == 'Michael']
-    
-    # Sort by timestamp (most recent first)
-    amy_entries.sort(key=lambda x: x.get('Timestamp', ''), reverse=True)
-    michael_entries.sort(key=lambda x: x.get('Timestamp', ''), reverse=True)
-    
-    return {
-        'amy': amy_entries[0] if amy_entries else None,
-        'michael': michael_entries[0] if michael_entries else None
-    }
-
-def get_memories_and_worries(records):
-    """Get all memories and worries from records"""
+    # Collect memories and worries (already sorted by timestamp from sorted_records)
     memories_and_worries = []
-    
-    for record in records:
+    for record in sorted_records:
         user = record.get('Who is filling this out right now.', '')
         timestamp = record.get('Timestamp', '')
         date = record.get('What day is this for? ', '')
@@ -136,9 +120,35 @@ def get_memories_and_worries(records):
                 'date': date
             })
     
-    # Sort by timestamp (most recent first)
-    memories_and_worries.sort(key=lambda x: x['timestamp'], reverse=True)
-    return memories_and_worries
+    return {
+        'sorted_records': sorted_records,
+        'amy_entries': amy_entries,
+        'michael_entries': michael_entries,
+        'hangout_entries': hangout_entries,
+        'minecraft_entries': minecraft_entries,
+        'kiss_entries': kiss_entries,
+        'memories_and_worries': memories_and_worries
+    }
+
+def get_status(processed_data):
+    """Get status summary from processed data"""
+    return {
+        'is_long_distance': processed_data['sorted_records'][0]['Are you long distance right now?'] if processed_data['sorted_records'] else None,
+        'last_hangout_date': processed_data['hangout_entries'][0]['What day is this for? '] if processed_data['hangout_entries'] else None,
+        'last_minecraft_date': processed_data['minecraft_entries'][0]['What day is this for? '] if processed_data['minecraft_entries'] else None,
+        'last_kiss_date': processed_data['kiss_entries'][0]['What day is this for? '] if processed_data['kiss_entries'] else None
+    }
+
+def get_last_entries(processed_data):
+    """Get last entries for each user from processed data"""
+    return {
+        'amy': processed_data['amy_entries'][0] if processed_data['amy_entries'] else None,
+        'michael': processed_data['michael_entries'][0] if processed_data['michael_entries'] else None
+    }
+
+def get_memories_and_worries(processed_data):
+    """Get memories and worries from processed data"""
+    return processed_data['memories_and_worries']
 
 @app.route('/')
 def home():
@@ -165,14 +175,17 @@ def hangout_data():
         if not records:
             return jsonify({"error": "Failed to process sheet data"}), 500
         
+        # Process and sort all records once
+        processed_data = process_records(records)
+        
         # Get status summary
-        status_data = get_status(records)
+        status_data = get_status(processed_data)
         
         # Get last entries for each user
-        last_entries_data = get_last_entries(records)
+        last_entries_data = get_last_entries(processed_data)
         
         # Get all memories and worries
-        memories_and_worries = get_memories_and_worries(records)
+        memories_and_worries = get_memories_and_worries(processed_data)
         
         # Check if relationship is monogamous
         monogamous = not any(
@@ -201,7 +214,10 @@ def status():
         if not records:
             return jsonify({"error": "Failed to process sheet data"}), 500
         
-        return jsonify(get_status(records))
+        # Process and sort all records once
+        processed_data = process_records(records)
+        
+        return jsonify(get_status(processed_data))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -216,7 +232,10 @@ def last_entries():
         if not records:
             return jsonify({"error": "Failed to process sheet data"}), 500
         
-        return jsonify(get_last_entries(records))
+        # Process and sort all records once
+        processed_data = process_records(records)
+        
+        return jsonify(get_last_entries(processed_data))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
