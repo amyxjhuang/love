@@ -5,12 +5,20 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 import json
+import resend
 
 # Load environment variables
 load_dotenv()
 
 # Get the Google Sheet URL from environment variable
 SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
+RESEND_API_KEY = os.getenv('RESEND_API_KEY')
+EMAIL_FROM = os.getenv('EMAIL_FROM', 'noreply@yourdomain.com')
+EMAIL_TO = os.getenv('EMAIL_TO', 'amy@example.com,michael@example.com')
+
+# Initialize Resend
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
 
 app = Flask(__name__)
 CORS(app, origins=["*"])  # Allow requests from any origin
@@ -150,6 +158,102 @@ def get_memories_and_worries(processed_data):
     """Get memories and worries from processed data"""
     return processed_data['memories_and_worries']
 
+def generate_weekly_email(processed_data):
+    """Generate weekly email content"""
+    status = get_status(processed_data)
+    last_entries = get_last_entries(processed_data)
+    memories = get_memories_and_worries(processed_data)
+    
+    # Get recent memories (last 7 days or last 5 entries)
+    recent_memories = memories[:5] if memories else []
+    
+    # Basic email template - customize this later
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #f595eb 0%, #ffa500 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }}
+            .section {{ margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }}
+            .memory {{ margin: 10px 0; padding: 10px; background: white; border-left: 4px solid #f595eb; }}
+            .date {{ color: #666; font-size: 0.9em; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>💕 Weekly Relationship Update</h1>
+            <p>{datetime.now().strftime('%B %d, %Y')}</p>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Status Summary</h2>
+            <p><strong>Last Hangout:</strong> {status.get('last_hangout_date', 'No recent hangouts')}</p>
+            <p><strong>Last Minecraft Day:</strong> {status.get('last_minecraft_date', 'No recent Minecraft')}</p>
+            <p><strong>Last Kiss:</strong> {status.get('last_kiss_date', 'No recent kisses')}</p>
+        </div>
+        
+        <div class="section">
+            <h2>👥 Recent Survey Responses</h2>
+            {f'<p><strong>Amy:</strong> Relationship strength: {last_entries["amy"].get("How strong do you think our relationship is?", "N/A")}/5</p>' if last_entries.get('amy') else '<p>No recent response from Amy</p>'}
+            {f'<p><strong>Michael:</strong> Relationship strength: {last_entries["michael"].get("How strong do you think our relationship is?", "N/A")}/5</p>' if last_entries.get('michael') else '<p>No recent response from Michael</p>'}
+        </div>
+        
+        <div class="section">
+            <h2>💭 Recent Memories & Thoughts</h2>
+            {''.join([f'<div class="memory"><strong>{memory["user"]}</strong> ({memory["type"]}): {memory["text"]}<div class="date">{memory["date"]}</div></div>' for memory in recent_memories]) if recent_memories else '<p>No recent memories recorded</p>'}
+        </div>
+        
+        <div class="section">
+            <p style="text-align: center; color: #666;">
+                💕 Keep the love alive! 💕
+            </p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return html_content
+
+def send_weekly_email():
+    """Send weekly email with relationship updates"""
+    try:
+        if not RESEND_API_KEY:
+            print("RESEND_API_KEY not set")
+            return False
+            
+        # Fetch and process data
+        sheet_data = fetch_sheet_data()
+        if not sheet_data:
+            print("Failed to fetch sheet data")
+            return False
+            
+        records = process_sheet_data(sheet_data)
+        if not records:
+            print("Failed to process sheet data")
+            return False
+            
+        processed_data = process_records(records)
+        
+        # Generate email content
+        html_content = generate_weekly_email(processed_data)
+        
+        # Send email
+        email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
+        
+        response = resend.Emails.send({
+            "from": EMAIL_FROM,
+            "to": email_to_list,
+            "subject": f"💕 Weekly Relationship Update - {datetime.now().strftime('%B %d, %Y')}",
+            "html": html_content
+        })
+        
+        print(f"Email sent successfully: {response['id']}")
+        return True
+        
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
 @app.route('/')
 def home():
     return jsonify({
@@ -245,6 +349,21 @@ def test():
         "message": "API is working!",
         "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     })
+
+@app.route('/send-email')
+def trigger_email():
+    """Manually trigger weekly email (for testing)"""
+    try:
+        success = send_weekly_email()
+        if success:
+            return jsonify({
+                "message": "Weekly email sent successfully!",
+                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+        else:
+            return jsonify({"error": "Failed to send email"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # For Vercel deployment
 app.debug = True

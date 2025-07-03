@@ -1,0 +1,21 @@
+name: Weekly Relationship Email
+
+on:
+  schedule:
+    # Run every Sunday at 9 AM UTC
+    - cron: '0 9 * * 0'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Send Weekly Email
+      run: |
+        # Call your deployed API endpoint to send the email
+        curl -X GET "https://love-tau-gilt.vercel.app/send-email"
+      
+    - name: Log Success
+      run: |
+        echo "Weekly email job completed at $(date)" 
