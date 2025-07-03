@@ -1,4 +1,5 @@
 # love
+Creating a dashboard for me and my lover 
 
 * `source venv/bin/activate`
 
