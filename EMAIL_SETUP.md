@@ -10,9 +10,6 @@
 Add these to your deployment platform (Vercel/Railway/etc.):
 
 ```
-RESEND_API_KEY=re_your_api_key_here
-EMAIL_FROM=noreply@yourdomain.com
-EMAIL_TO=amy@example.com,michael@example.com
 ```
 
 ## 3. Deploy Your App
@@ -45,5 +42,5 @@ Edit the `generate_weekly_email()` function in `app.py` to customize:
 - Test manually first before relying on automation
 
 ## Email Schedule
-- **Automatic**: Every Sunday at 9 AM UTC
+- **Automatic**: Every Saturday at 10 PM UTC
 - **Manual**: Any time via GitHub Actions or API endpoint 

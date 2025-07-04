@@ -13,8 +13,8 @@ load_dotenv()
 # Get the Google Sheet URL from environment variable
 SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
 RESEND_API_KEY = os.getenv('RESEND_API_KEY')
-EMAIL_FROM = os.getenv('EMAIL_FROM', 'noreply@yourdomain.com')
-EMAIL_TO = os.getenv('EMAIL_TO', 'amy@example.com,michael@example.com')
+EMAIL_FROM = os.getenv('EMAIL_FROM', 'onboarding@resend.dev')
+EMAIL_TO = os.getenv('EMAIL_TO', 'amyxjhuang@gmail.com,mike.m.shao@gmail.com')
 
 # Initialize Resend
 if RESEND_API_KEY:
@@ -220,6 +220,10 @@ def send_weekly_email():
         if not RESEND_API_KEY:
             print("RESEND_API_KEY not set")
             return False
+        
+        print(f"Using API key: {RESEND_API_KEY[:10]}...")
+        print(f"From email: {EMAIL_FROM}")
+        print(f"To emails: {EMAIL_TO}")
             
         # Fetch and process data
         sheet_data = fetch_sheet_data()
@@ -240,6 +244,8 @@ def send_weekly_email():
         # Send email
         email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
         
+        print(f"Sending email to: {email_to_list}")
+        
         response = resend.Emails.send({
             "from": EMAIL_FROM,
             "to": email_to_list,
@@ -252,6 +258,9 @@ def send_weekly_email():
         
     except Exception as e:
         print(f"Error sending email: {e}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
         return False
 
 @app.route('/')
@@ -362,6 +371,34 @@ def trigger_email():
             })
         else:
             return jsonify({"error": "Failed to send email"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/test-email')
+def test_simple_email():
+    print(f"Using API key: {RESEND_API_KEY[:10]}...")
+    print(f"From email: {EMAIL_FROM}")
+    print(f"To emails: {EMAIL_TO}")
+        
+    """Send a simple test email"""
+    try:
+        if not RESEND_API_KEY:
+            return jsonify({"error": "RESEND_API_KEY not set"}), 500
+        
+        email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
+        print(f"Sending email to: {email_to_list}")
+        response = resend.Emails.send({
+            "from": "onboarding@resend.dev",
+            "to": ['amyxjhuang@berkeley.edu'],
+            "subject": "🧪 Test Email from Relationship Dashboard",
+            "html": "<h1>Test Email</h1><p>If you receive this, the email setup is working!</p>"
+        })
+        
+        return jsonify({
+            "message": "Test email sent successfully!",
+            "id": response['id']
+        })
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
