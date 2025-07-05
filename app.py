@@ -14,7 +14,7 @@ load_dotenv()
 SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
 RESEND_API_KEY = os.getenv('RESEND_API_KEY')
 EMAIL_FROM = os.getenv('EMAIL_FROM', 'onboarding@resend.dev')
-EMAIL_TO = os.getenv('EMAIL_TO', 'amyxjhuang@gmail.com,mike.m.shao@gmail.com')
+EMAIL_TO = os.getenv('EMAIL_TO', 'fineshyts@michaelamy5ever.com')
 
 # Initialize Resend
 if RESEND_API_KEY:
@@ -388,8 +388,8 @@ def test_simple_email():
         email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
         print(f"Sending email to: {email_to_list}")
         response = resend.Emails.send({
-            "from": "onboarding@resend.dev",
-            "to": ['amyxjhuang@berkeley.edu'],
+            "from": EMAIL_FROM,
+            "to": email_to_list,
             "subject": "🧪 Test Email from Relationship Dashboard",
             "html": "<h1>Test Email</h1><p>If you receive this, the email setup is working!</p>"
         })
