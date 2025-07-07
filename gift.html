@@ -7,6 +7,7 @@
     
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -27,7 +28,7 @@
         }
 
         .container {
-            max-width: 480px;
+            max-width: 80%;
             width: 100%;
             background: #111111;
             border: 1px solid #333333;
@@ -69,6 +70,8 @@
             flex-direction: column;
             gap: 16px;
             margin-bottom: 24px;
+            margin-right: 20%;
+            margin-left: 20%;
         }
 
         .input-group {
@@ -248,7 +251,22 @@
             transform: scale(1.05);
         }
 
-        /* Mobile responsive */
+        .preview-flex-row {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .preview-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1 1 160px;
+            min-width: 140px;
+            max-width: 220px;
+        }
         @media (max-width: 600px) {
             .container {
                 padding: 32px 24px;
@@ -272,6 +290,13 @@
                 padding: 14px 20px;
                 font-size: 0.95rem;
             }
+            .preview-flex-row {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .preview-col {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
@@ -279,7 +304,9 @@
     <div class="container">
         <div class="gift-icon">🐅</div>
         <h1>top secret page...</h1>
-        <p class="subtitle">top secret website. answer this question to continue: what is the last line of the 2nd poem michael wrote for amy.</p>
+        <p class="subtitle">very good job finding this top secret website. only top 1% of people are able to do this. <br/><br/>
+            now, we have to see if you're the top 1 person in the world (other than me), only he can answer this question.
+            <br /> answer this to continue:<br/><br /><i> what is the <b>last line</b> of the <b>2nd poem</b> michael wrote for amy.</i></p>
         
         <div id="password-section">
             <form class="password-form" id="password-form">
@@ -306,9 +333,6 @@
     </div>
 
     <script>
-        // Set your password here (fallback for when API is not available)
-        const CORRECT_PASSWORD = 'amyandmichael2025'; // Change this to your desired password
-        
         const passwordForm = document.getElementById('password-form');
         const passwordInput = document.getElementById('password-input');
         const errorMessage = document.getElementById('error-message');
@@ -344,6 +368,11 @@
                 
                 if (result.unlocked) {
                     // Success!
+                    if (window.confetti) confetti({
+                        particleCount: 120,
+                        spread: 80,
+                        origin: { y: 0.6 }
+                    });
                     passwordSection.style.display = 'none';
                     displayGiftContent(result.gift_content);
                     errorMessage.style.display = 'none';
@@ -383,7 +412,7 @@
                     }, 2000);
                     
                 } else {
-                    errorMessage.textContent = '❌ Wrong password! do you even know anything about anything??';
+                    errorMessage.textContent = '❌ Wrong password! do you even know anything about anything?? It is possible that this is an API error actually.';
                     errorMessage.style.display = 'block';
                     passwordInput.value = '';
                     passwordInput.focus();
@@ -430,14 +459,16 @@
                     html += `<p style="font-size: 1.1rem; line-height: 1.6;">${section.content}</p>`;
                 } else if (section.type === 'preview_images') {
                     html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
-                    html += `<div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 20px 0;"><div style="text-align: center;">`;
+                    html += `<div class="preview-flex-row">`;
                     section.images.forEach(image => {
                         html += `
+                            <div class="preview-col">
                                 <img src="${image.src}" alt="${image.alt}" class="preview-image">
-                            
+                                <p style="margin-top: 8px; color: #888888; font-size: 0.9rem; text-align:center;">${image.alt}</p>
+                            </div>
                         `;
                     });
-                    html += `</div></div>`;
+                    html += `</div>`;
                 } else if (section.type === 'download_section') {
                     html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
                     html += `<p style="margin-bottom: 20px; color: #d1d5db;">${section.description}</p>`;

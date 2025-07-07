@@ -494,6 +494,7 @@ def gift_verify():
         print(f"Correct password: {correct_password}")
         if submitted_password == correct_password:
             # Return gift information
+            gift_message = os.getenv('GIFT_MESSAGE', 'Error loading the awesome gift message I wrote.')
             gift_data = {
                 "unlocked": True,
                 "message": "correct password.",
@@ -503,7 +504,7 @@ def gift_verify():
                     "sections": [
                         {
                             "type": "message",
-                            "content": "placeholder"
+                            "content": gift_message
                         },
                         {
                             "type": "preview_images",
