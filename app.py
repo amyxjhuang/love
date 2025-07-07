@@ -505,11 +505,11 @@ def gift_verify():
                             "title": "",
                             "images": [
                                 {
-                                    "src": "/gift-assets/michael-preview.png",
+                                    "src": "gift-assets/michael-preview.png",
                                     "alt": "Michael Preview"
                                 },
                                 {
-                                    "src": "/gift-assets/amy-preview.png", 
+                                    "src": "gift-assets/amy-preview.png", 
                                     "alt": "Amy Preview"
                                 }
                             ]
@@ -521,12 +521,12 @@ def gift_verify():
                             "downloads": [
                                 {
                                     "name": "Download Classic",
-                                    "file": "/gift-assets/michael_classic.png",
+                                    "file": "gift-assets/michael_classic.png",
                                     "filename": "michael_classic.png"
                                 },
                                 {
                                     "name": "Download Slim",
-                                    "file": "/gift-assets/michael_slim.png",
+                                    "file": "gift-assets/michael_slim.png",
                                     "filename": "michael_slim.png"
                                 }
                             ]

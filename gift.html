@@ -430,16 +430,14 @@
                     html += `<p style="font-size: 1.1rem; line-height: 1.6;">${section.content}</p>`;
                 } else if (section.type === 'preview_images') {
                     html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
-                    html += `<div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 20px 0;">`;
+                    html += `<div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 20px 0;"><div style="text-align: center;">`;
                     section.images.forEach(image => {
                         html += `
-                            <div style="text-align: center;">
                                 <img src="${image.src}" alt="${image.alt}" class="preview-image">
-                                <p style="margin-top: 8px; color: #888888; font-size: 0.9rem;">${image.alt}</p>
-                            </div>
+                            
                         `;
                     });
-                    html += `</div>`;
+                    html += `</div></div>`;
                 } else if (section.type === 'download_section') {
                     html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
                     html += `<p style="margin-bottom: 20px; color: #d1d5db;">${section.description}</p>`;
