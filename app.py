@@ -500,6 +500,37 @@ def gift_verify():
                             "type": "message",
                             "content": "placeholder"
                         },
+                        {
+                            "type": "preview_images",
+                            "title": "",
+                            "images": [
+                                {
+                                    "src": "/gift-assets/michael-preview.png",
+                                    "alt": "Michael Preview"
+                                },
+                                {
+                                    "src": "/gift-assets/amy-preview.png", 
+                                    "alt": "Amy Preview"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "download_section",
+                            "title": "download here",
+                            "description": "Choose your preferred style:",
+                            "downloads": [
+                                {
+                                    "name": "Download Classic",
+                                    "file": "/gift-assets/michael_classic.png",
+                                    "filename": "michael_classic.png"
+                                },
+                                {
+                                    "name": "Download Slim",
+                                    "file": "/gift-assets/michael_slim.png",
+                                    "filename": "michael_slim.png"
+                                }
+                            ]
+                        }
                     ],
                 }
             }
@@ -514,6 +545,16 @@ def gift_verify():
     except Exception as e:
         print(f"Error in gift verification: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/gift-assets/<path:filename>')
+def serve_gift_assets(filename):
+    """Serve gift asset files"""
+    try:
+        from flask import send_from_directory
+        return send_from_directory('gift-assets', filename)
+    except Exception as e:
+        print(f"Error serving gift asset {filename}: {e}")
+        return jsonify({"error": "File not found"}), 404
 
 # For Vercel deployment
 app.debug = True

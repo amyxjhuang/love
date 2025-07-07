@@ -217,6 +217,37 @@
             transform: translateY(-1px);
         }
 
+        .download-btn {
+            background: #6366f1;
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .download-btn:hover {
+            background: #5855eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .preview-image {
+            max-width: 200px;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #333333;
+            transition: transform 0.2s ease;
+        }
+
+        .preview-image:hover {
+            transform: scale(1.05);
+        }
+
         /* Mobile responsive */
         @media (max-width: 600px) {
             .container {
@@ -388,7 +419,7 @@
             let html = `
                 <div class="gift-message">
                     <h2>${giftData.title}</h2>
-                    <p style="font-style: italic; color: #00aa00; margin-bottom: 20px;">${giftData.subtitle}</p>
+                    <p style="font-style: italic; color: #888888; margin-bottom: 20px;">${giftData.subtitle}</p>
             `;
             
             // Add each section
@@ -397,15 +428,40 @@
                 
                 if (section.type === 'message') {
                     html += `<p style="font-size: 1.1rem; line-height: 1.6;">${section.content}</p>`;
+                } else if (section.type === 'preview_images') {
+                    html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
+                    html += `<div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 20px 0;">`;
+                    section.images.forEach(image => {
+                        html += `
+                            <div style="text-align: center;">
+                                <img src="${image.src}" alt="${image.alt}" class="preview-image">
+                                <p style="margin-top: 8px; color: #888888; font-size: 0.9rem;">${image.alt}</p>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                } else if (section.type === 'download_section') {
+                    html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
+                    html += `<p style="margin-bottom: 20px; color: #d1d5db;">${section.description}</p>`;
+                    html += `<div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">`;
+                    section.downloads.forEach(download => {
+                        html += `
+                            <button onclick="downloadFile('${download.file}', '${download.filename}')" 
+                                    class="download-btn">
+                                ${download.name}
+                            </button>
+                        `;
+                    });
+                    html += `</div>`;
                 } else if (section.type === 'memory' || section.type === 'promise') {
-                    html += `<h3 style="color: #00ffff; margin-bottom: 15px;">${section.title}</h3>`;
-                    html += `<ul style="text-align: left; margin: 15px 0; color: #00ff00;">`;
+                    html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
+                    html += `<ul style="text-align: left; margin: 15px 0; color: #d1d5db;">`;
                     section.content.forEach(item => {
                         html += `<li style="margin-bottom: 8px;">${item}</li>`;
                     });
                     html += `</ul>`;
                 } else if (section.type === 'future') {
-                    html += `<h3 style="color: #00ffff; margin-bottom: 15px;">${section.title}</h3>`;
+                    html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
                     html += `<p style="font-size: 1.1rem; line-height: 1.6;">${section.content}</p>`;
                 }
                 
@@ -415,8 +471,8 @@
             // Add special note
             if (giftData.special_note) {
                 html += `
-                    <div style="margin-top: 30px; padding: 20px; background: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; border-radius: 10px;">
-                        <p style="font-style: italic; color: #00ff00; text-align: center; font-size: 1.1rem;">${giftData.special_note}</p>
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; border-radius: 10px;">
+                        <p style="font-style: italic; color: #d1d5db; text-align: center; font-size: 1.1rem;">${giftData.special_note}</p>
                     </div>
                 `;
             }
@@ -428,6 +484,18 @@
             
             giftContent.innerHTML = html;
             giftContent.style.display = 'block';
+        }
+        
+        function downloadFile(filePath, filename) {
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.href = filePath;
+            link.download = filename;
+            
+            // Append to body, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
