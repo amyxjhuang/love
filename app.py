@@ -402,6 +402,75 @@ def test_simple_email():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/face-match', methods=['POST'])
+def face_match():
+    """Compare uploaded face embeddings with stored reference embeddings"""
+    try:
+        from flask import request
+        import numpy as np
+        
+        # Get the face data from the request
+        data = request.get_json()
+        if not data or 'faces' not in data:
+            return jsonify({"error": "No face data provided"}), 400
+        
+        uploaded_faces = data['faces']
+        if not uploaded_faces:
+            return jsonify({"error": "No faces detected in uploaded image"}), 400
+        
+        # For now, let's use a simple reference embedding
+        # You can store this in an environment variable or database
+        reference_embedding = [
+            100.0, 100.0,  # Keypoint 1 (x, y)
+            80.0, 80.0,    # Keypoint 2 (x, y)
+            120.0, 80.0,   # Keypoint 3 (x, y)
+            90.0, 120.0,   # Keypoint 4 (x, y)
+            110.0, 120.0   # Keypoint 5 (x, y)
+        ]
+        
+        best_match = None
+        best_similarity = 0.0
+        
+        # Compare each uploaded face with the reference
+        for face in uploaded_faces:
+            embedding = face.get('embedding', [])
+            if len(embedding) >= len(reference_embedding):
+                # Pad or truncate to match reference length
+                embedding = embedding[:len(reference_embedding)]
+                while len(embedding) < len(reference_embedding):
+                    embedding.append(0.0)
+                
+                # Calculate cosine similarity
+                embedding_np = np.array(embedding)
+                reference_np = np.array(reference_embedding)
+                
+                # Normalize vectors
+                embedding_norm = np.linalg.norm(embedding_np)
+                reference_norm = np.linalg.norm(reference_np)
+                
+                if embedding_norm > 0 and reference_norm > 0:
+                    similarity = np.dot(embedding_np, reference_np) / (embedding_norm * reference_norm)
+                    
+                    if similarity > best_similarity:
+                        best_similarity = similarity
+                        best_match = face
+        
+        # Determine if it's a match (threshold can be adjusted)
+        match_threshold = 0.7
+        is_match = best_similarity >= match_threshold
+        
+        return jsonify({
+            "match": is_match,
+            "similarity": best_similarity,
+            "message": f"Best similarity: {best_similarity:.3f} (threshold: {match_threshold})",
+            "face_count": len(uploaded_faces),
+            "best_face_confidence": best_match['confidence'] if best_match else 0.0
+        })
+        
+    except Exception as e:
+        print(f"Error in face matching: {e}")
+        return jsonify({"error": str(e)}), 500
+
 # For Vercel deployment
 app.debug = True
 

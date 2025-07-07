@@ -354,6 +354,18 @@
                     <!-- Stats will be populated here -->
                 </div>
             </div>
+            
+            <div class="face-info">
+                <h3>🔍 Face Matching</h3>
+                <div style="text-align: center; margin: 20px 0;">
+                    <button id="submit-face-btn" class="submit-btn" style="display: none;">
+                        Submit Face for Matching
+                    </button>
+                    <div id="matching-result" style="margin-top: 15px; display: none;">
+                        <!-- Matching results will appear here -->
+                    </div>
+                </div>
+            </div>
         </div>
         
         <a href="index.html" class="back-btn">← Back to Dashboard</a>
@@ -594,6 +606,8 @@
             const faceCount = document.getElementById('face-count');
             const embeddingData = document.getElementById('embedding-data');
             const statsGrid = document.getElementById('stats-grid');
+            const submitBtn = document.getElementById('submit-face-btn');
+            const matchingResult = document.getElementById('matching-result');
 
             // Update face count
             faceCount.querySelector('.stat-value').textContent = detections.length;
@@ -616,8 +630,17 @@
                     embeddingText += '\n';
                 });
                 embeddingData.textContent = embeddingText;
+                
+                // Show submit button if faces are detected
+                submitBtn.style.display = 'inline-block';
+                submitBtn.onclick = () => submitFaceForMatching(detections);
+                
+                // Hide previous matching results
+                matchingResult.style.display = 'none';
             } else {
                 embeddingData.textContent = 'No faces detected in the image';
+                submitBtn.style.display = 'none';
+                matchingResult.style.display = 'none';
             }
 
             // Display statistics
@@ -636,7 +659,7 @@
                     </div>
                     <div class="stat-item">
                         <div class="stat-label">Detection Method</div>
-                        <div class="stat-value">MediaPipe</div>
+                        <div class="stat-value">Simple Analysis</div>
                     </div>
                 `;
             }
@@ -664,6 +687,91 @@
 
         function hideResults() {
             resultsSection.style.display = 'none';
+        }
+
+        async function submitFaceForMatching(detections) {
+            const submitBtn = document.getElementById('submit-face-btn');
+            const matchingResult = document.getElementById('matching-result');
+            
+            // Disable button and show processing
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Matching...';
+            matchingResult.style.display = 'block';
+            matchingResult.innerHTML = '<div style="color: #00ffff;">🔍 Comparing face embeddings...</div>';
+            
+            try {
+                // Prepare the face data for submission
+                const faceData = {
+                    faces: detections.map(detection => ({
+                        confidence: detection.score[0],
+                        boundingBox: detection.boundingBox,
+                        keypoints: detection.keypoints,
+                        // Create a simple embedding from keypoints
+                        embedding: detection.keypoints.map(kp => [kp.x, kp.y]).flat()
+                    })),
+                    timestamp: new Date().toISOString()
+                };
+                // Backend API URL - change this to your deployed backend URL
+                const API_URL = 'http://localhost:5001/hangout-data'; // For local development
+                // const API_URL = 'https://love-tau-gilt.vercel.app/face-match'; // For production
+
+                // Send to your backend API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(faceData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Display the result
+                if (result.match) {
+                    matchingResult.innerHTML = `
+                        <div style="color: #00ff00; font-weight: bold; font-size: 1.1rem;">
+                            ✅ MATCH FOUND!
+                        </div>
+                        <div style="color: #00aa00; margin-top: 10px;">
+                            Similarity: ${(result.similarity * 100).toFixed(1)}%
+                        </div>
+                        <div style="color: #00aa00;">
+                            ${result.message || 'Face matches the stored embedding!'}
+                        </div>
+                    `;
+                } else {
+                    matchingResult.innerHTML = `
+                        <div style="color: #ff0000; font-weight: bold; font-size: 1.1rem;">
+                            ❌ NO MATCH
+                        </div>
+                        <div style="color: #aa0000; margin-top: 10px;">
+                            Similarity: ${(result.similarity * 100).toFixed(1)}%
+                        </div>
+                        <div style="color: #aa0000;">
+                            ${result.message || 'Face does not match the stored embedding.'}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error submitting face for matching:', error);
+                matchingResult.innerHTML = `
+                    <div style="color: #ff0000; font-weight: bold;">
+                        ❌ Error: ${error.message}
+                    </div>
+                    <div style="color: #aa0000; margin-top: 10px;">
+                        Please try again or check your connection.
+                    </div>
+                `;
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Face for Matching';
+            }
         }
     </script>
 </body>
