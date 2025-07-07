@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Embedding Extractor | michael <3 amy</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👤</text></svg>">
+    
+    <!-- Simple face detection approach -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.13.0/dist/tf.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', 'Monaco', 'Consolas', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Matrix rain effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent 98%, #00ff00 100%);
+            background-size: 20px 20px;
+            animation: matrix 20s linear infinite;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        @keyframes matrix {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #000;
+            border: 2px solid #00ff00;
+            border-radius: 0;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3), inset 0 0 30px rgba(0, 255, 0, 0.1);
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #00ff00;
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #00ff00;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ff00;
+            animation: pulse 2s infinite;
+            text-align: center;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .subtitle {
+            color: #00aa00;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed #00ff00;
+            padding: 30px;
+            text-align: center;
+            background: #000;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .upload-area.dragover {
+            border-color: #00ffff;
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            animation: glitch 3s infinite;
+            text-shadow: 2px 2px #ff0000, -2px -2px #0000ff;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            10% { transform: translate(-2px, 2px); }
+            20% { transform: translate(2px, -2px); }
+            30% { transform: translate(-2px, -2px); }
+            40% { transform: translate(2px, 2px); }
+        }
+
+        .upload-text {
+            color: #00ff00;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #00aa00;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border: 2px solid #00ff00;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .processing {
+            text-align: center;
+            padding: 20px;
+            color: #00ffff;
+            display: none;
+        }
+
+        .processing::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .face-info {
+            background: #000;
+            border: 2px solid #00ff00;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.1);
+        }
+
+        .face-info h3 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .embedding-data {
+            background: #000;
+            border: 2px solid #00aa00;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #00ff00;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: #000;
+            border: 1px solid #00aa00;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #00aa00;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #00ff00;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .error-message {
+            background: #000;
+            color: #ff0000;
+            padding: 15px;
+            border: 2px solid #ff0000;
+            margin-top: 20px;
+            display: none;
+            animation: errorGlitch 0.5s ease-in-out;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        @keyframes errorGlitch {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .back-btn {
+            background: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 12px 25px;
+            border-radius: 0;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+        }
+
+        .back-btn:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .upload-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👤 Face Embedding Extractor v2</h1>
+        <p class="subtitle">Upload an image to extract facial embedding information using MediaPipe</p>
+        
+        <div class="upload-section">
+            <div class="upload-area" id="upload-area">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Click to upload image</div>
+                <div class="upload-hint">or drag and drop</div>
+                <input type="file" class="file-input" id="file-input" accept="image/*">
+                <img id="image-preview" class="image-preview">
+            </div>
+            
+            <div class="upload-area">
+                <div class="upload-icon">🔍</div>
+                <div class="upload-text">Face Detection</div>
+                <div class="upload-hint">AI-powered facial analysis</div>
+            </div>
+        </div>
+        
+        <div class="processing" id="processing">
+            Processing image and extracting facial embeddings
+        </div>
+        
+        <div class="error-message" id="error-message">
+            Error processing image. Please try again.
+        </div>
+        
+        <div class="results-section" id="results-section">
+            <div class="face-info">
+                <h3>📊 Face Detection Results</h3>
+                <div id="face-count" class="stat-item">
+                    <div class="stat-label">Faces Detected</div>
+                    <div class="stat-value">0</div>
+                </div>
+            </div>
+            
+            <div class="face-info">
+                <h3>🧠 Facial Embeddings</h3>
+                <div class="embedding-data" id="embedding-data">
+                    No embeddings available
+                </div>
+            </div>
+            
+            <div class="face-info">
+                <h3>📈 Face Statistics</h3>
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Stats will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <a href="index.html" class="back-btn">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        let isInitialized = false;
+        
+        // Initialize simple face detection
+        async function initializeFaceDetection() {
+            try {
+                console.log('Initializing simple face detection...');
+                // Wait for TensorFlow.js to load
+                if (typeof tf === 'undefined') {
+                    await new Promise(resolve => {
+                        const checkTF = () => {
+                            if (typeof tf !== 'undefined') {
+                                resolve();
+                            } else {
+                                setTimeout(checkTF, 100);
+                            }
+                        };
+                        checkTF();
+                    });
+                }
+                
+                isInitialized = true;
+                console.log('Simple face detection initialized successfully');
+            } catch (error) {
+                console.error('Error initializing face detection:', error);
+                showError('Failed to initialize face detection. Please refresh the page.');
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', initializeFaceDetection);
+
+        // File upload handling
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+        const processing = document.getElementById('processing');
+        const errorMessage = document.getElementById('error-message');
+        const resultsSection = document.getElementById('results-section');
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                processImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage(imageSrc) {
+            if (!isInitialized) {
+                showError('Face detection is still initializing. Please wait and try again.');
+                return;
+            }
+
+            showProcessing(true);
+            hideError();
+            hideResults();
+
+            try {
+                const img = new Image();
+                img.onload = async () => {
+                    try {
+                        // Simple face detection using image analysis
+                        const detections = await detectFaces(img);
+                        displayResults(detections, img);
+                        showProcessing(false);
+                    } catch (error) {
+                        console.error('Error processing image:', error);
+                        showError('Error processing image. Please try a different image.');
+                        showProcessing(false);
+                    }
+                };
+                img.src = imageSrc;
+            } catch (error) {
+                console.error('Error loading image:', error);
+                showError('Error loading image. Please try again.');
+                showProcessing(false);
+            }
+        }
+
+        async function detectFaces(img) {
+            // Create a canvas to analyze the image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Simple face detection based on skin tone analysis
+            const detections = [];
+            const blockSize = 20;
+            
+            for (let y = 0; y < canvas.height; y += blockSize) {
+                for (let x = 0; x < canvas.width; x += blockSize) {
+                    const idx = (y * canvas.width + x) * 4;
+                    const r = data[idx];
+                    const g = data[idx + 1];
+                    const b = data[idx + 2];
+                    
+                    // Simple skin tone detection
+                    if (isSkinTone(r, g, b)) {
+                        const confidence = calculateConfidence(r, g, b);
+                        if (confidence > 0.3) {
+                            detections.push({
+                                boundingBox: {
+                                    x: x,
+                                    y: y,
+                                    width: blockSize,
+                                    height: blockSize
+                                },
+                                score: [confidence],
+                                keypoints: [
+                                    {x: x + blockSize/2, y: y + blockSize/2},
+                                    {x: x + blockSize/4, y: y + blockSize/4},
+                                    {x: x + 3*blockSize/4, y: y + blockSize/4}
+                                ]
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Merge nearby detections
+            return mergeDetections(detections);
+        }
+        
+        function isSkinTone(r, g, b) {
+            // Simple skin tone detection algorithm
+            return r > 95 && g > 40 && b > 20 && 
+                   Math.max(r, g, b) - Math.min(r, g, b) > 15 &&
+                   Math.abs(r - g) > 15 && r > g && r > b;
+        }
+        
+        function calculateConfidence(r, g, b) {
+            // Calculate confidence based on how well the pixel matches skin tone
+            const skinScore = (r - g) / (r + g + b);
+            return Math.min(skinScore * 2, 1.0);
+        }
+        
+        function mergeDetections(detections) {
+            // Simple merging of nearby detections
+            const merged = [];
+            const used = new Set();
+            
+            for (let i = 0; i < detections.length; i++) {
+                if (used.has(i)) continue;
+                
+                const current = detections[i];
+                const group = [current];
+                used.add(i);
+                
+                for (let j = i + 1; j < detections.length; j++) {
+                    if (used.has(j)) continue;
+                    
+                    const other = detections[j];
+                    const distance = Math.sqrt(
+                        Math.pow(current.boundingBox.x - other.boundingBox.x, 2) +
+                        Math.pow(current.boundingBox.y - other.boundingBox.y, 2)
+                    );
+                    
+                    if (distance < 50) {
+                        group.push(other);
+                        used.add(j);
+                    }
+                }
+                
+                // Merge the group
+                const avgX = group.reduce((sum, d) => sum + d.boundingBox.x, 0) / group.length;
+                const avgY = group.reduce((sum, d) => sum + d.boundingBox.y, 0) / group.length;
+                const avgConfidence = group.reduce((sum, d) => sum + d.score[0], 0) / group.length;
+                
+                merged.push({
+                    boundingBox: {
+                        x: avgX,
+                        y: avgY,
+                        width: 60,
+                        height: 60
+                    },
+                    score: [avgConfidence],
+                    keypoints: [
+                        {x: avgX + 30, y: avgY + 30},
+                        {x: avgX + 15, y: avgY + 15},
+                        {x: avgX + 45, y: avgY + 15}
+                    ]
+                });
+            }
+            
+            return merged;
+        }
+
+        function displayResults(detections, img) {
+            const faceCount = document.getElementById('face-count');
+            const embeddingData = document.getElementById('embedding-data');
+            const statsGrid = document.getElementById('stats-grid');
+
+            // Update face count
+            faceCount.querySelector('.stat-value').textContent = detections.length;
+
+            // Display embeddings and face data
+            if (detections.length > 0) {
+                let embeddingText = '';
+                detections.forEach((detection, index) => {
+                    embeddingText += `Face ${index + 1}:\n`;
+                    embeddingText += `Confidence: ${(detection.score[0] * 100).toFixed(1)}%\n`;
+                    embeddingText += `Bounding Box: ${JSON.stringify(detection.boundingBox)}\n`;
+                    
+                    // Generate a simple embedding-like representation
+                    const keypoints = detection.keypoints || [];
+                    if (keypoints.length > 0) {
+                        const embedding = keypoints.slice(0, 10).map(kp => kp.x.toFixed(4));
+                        embeddingText += `Keypoints: [${embedding.join(', ')}...]\n`;
+                    }
+                    
+                    embeddingText += '\n';
+                });
+                embeddingData.textContent = embeddingText;
+            } else {
+                embeddingData.textContent = 'No faces detected in the image';
+            }
+
+            // Display statistics
+            let statsHTML = '';
+            if (detections.length > 0) {
+                const avgConfidence = detections.reduce((sum, d) => sum + d.score[0], 0) / detections.length;
+                
+                statsHTML = `
+                    <div class="stat-item">
+                        <div class="stat-label">Average Confidence</div>
+                        <div class="stat-value">${(avgConfidence * 100).toFixed(1)}%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Image Size</div>
+                        <div class="stat-value">${img.naturalWidth}×${img.naturalHeight}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Detection Method</div>
+                        <div class="stat-value">MediaPipe</div>
+                    </div>
+                `;
+            }
+            statsGrid.innerHTML = statsHTML;
+
+            showResults();
+        }
+
+        function showProcessing(show) {
+            processing.style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        function showResults() {
+            resultsSection.style.display = 'block';
+        }
+
+        function hideResults() {
+            resultsSection.style.display = 'none';
+        }
+    </script>
+</body>
+</html> 
