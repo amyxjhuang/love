@@ -471,6 +471,50 @@ def face_match():
         print(f"Error in face matching: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/gift-verify', methods=['POST'])
+def gift_verify():
+    """Verify password and return gift information"""
+    try:
+        from flask import request
+        
+        # Get the password from the request
+        data = request.get_json()
+        if not data or 'password' not in data:
+            return jsonify({"error": "No password provided"}), 400
+        
+        submitted_password = data['password'].strip()
+        
+        # Set your password here (you can also use environment variable)
+        correct_password = os.getenv('GIFT_PASSWORD')
+        print(f"Correct password: {correct_password}")
+        if submitted_password == correct_password:
+            # Return gift information
+            gift_data = {
+                "unlocked": True,
+                "message": "correct password.",
+                "gift_content": {
+                    "title": "happy 5 months!!!! ",
+                    "subtitle": "",
+                    "sections": [
+                        {
+                            "type": "message",
+                            "content": "placeholder"
+                        },
+                    ],
+                }
+            }
+            return jsonify(gift_data)
+        else:
+            return jsonify({
+                "unlocked": False,
+                "message": "❌ Wrong password! Do you even know anything about anything?",
+                "hint": ""
+            }), 401
+        
+    except Exception as e:
+        print(f"Error in gift verification: {e}")
+        return jsonify({"error": str(e)}), 500
+
 # For Vercel deployment
 app.debug = True
 
