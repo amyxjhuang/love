@@ -271,7 +271,12 @@ def home():
             "/status": "Get status summary only",
             "/last-entries": "Get last entries for each user",
             "/hangout-data": "Get all data (status, last entries, memories, worries)",
-            "/test": "Test endpoint"
+            "/test": "Test endpoint",
+            "/send-email": "Send weekly email",
+            "/test-email": "Test email endpoint",
+            "/face-match": "Face matching endpoint",
+            "/gift-verify": "Gift verification endpoint",
+            "/gift-assets/<path:filename>": "Gift asset endpoint"
         }
     })
 
