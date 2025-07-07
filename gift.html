@@ -166,6 +166,8 @@
             padding: 32px;
             margin-bottom: 24px;
             text-align: left;
+            margin-right: 20%;
+            margin-left: 20%;
         }
 
         .gift-message h2 {
@@ -456,7 +458,7 @@
                 html += `<div style="margin-bottom: 25px;">`;
                 
                 if (section.type === 'message') {
-                    html += `<p style="font-size: 1.1rem; line-height: 1.6;">${section.content}</p>`;
+                    html += `<p style="font-size: 1.1rem; line-height: 1.6;">${section.content.replace(/\\n/g, '<br/>')}</p>`;
                 } else if (section.type === 'preview_images') {
                     html += `<h3 style="color: #6366f1; margin-bottom: 15px;">${section.title}</h3>`;
                     html += `<div class="preview-flex-row">`;
