@@ -35,12 +35,12 @@ def fetch_sheet_data():
         
         response = requests.get(public_url)
         response.raise_for_status()
-        
+        # print(response.text)
         # Google Sheets returns data wrapped in a function call, we need to extract it
         text = response.text
         json_text = text[47:-2]  # Remove the wrapper
+
         data = json.loads(json_text)
-        
         return data
     except Exception as e:
         print(f"Error fetching sheet data: {e}")
@@ -67,10 +67,19 @@ def process_sheet_data(data):
     
     return records
 
+def parse_timestamp(ts):
+    # Try to parse common formats, fallback to string for broken/missing values
+    for fmt in ("%m/%d/%Y %H:%M:%S", "%m/%d/%y %H:%M:%S", "%m/%d/%Y", "%m/%d/%y"):
+        try:
+            return datetime.strptime(ts, fmt)
+        except Exception:
+            continue
+    return datetime.min  # Put unparseable/missing dates at the end
+
 def process_records(records):
     """Process and sort all records for efficient access"""
     # Sort records by timestamp (most recent first)
-    sorted_records = sorted(records, key=lambda x: x.get('Timestamp', ''), reverse=True)
+    sorted_records = sorted(records, key=lambda x: parse_timestamp(x.get('Timestamp', '')), reverse=True)
     
     # Separate entries by user (already sorted by timestamp)
     amy_entries = [r for r in sorted_records if r.get('Who is filling this out right now.') == 'Amy']
@@ -127,7 +136,6 @@ def process_records(records):
                 'timestamp': timestamp,
                 'date': date
             })
-    
     return {
         'sorted_records': sorted_records,
         'amy_entries': amy_entries,
@@ -140,6 +148,7 @@ def process_records(records):
 
 def get_status(processed_data):
     """Get status summary from processed data"""
+    print(processed_data['sorted_records'][0])
     return {
         'is_long_distance': processed_data['sorted_records'][0]['Are you long distance right now?'] if processed_data['sorted_records'] else None,
         'last_hangout_date': processed_data['hangout_entries'][0]['What day is this for? '] if processed_data['hangout_entries'] else None,
