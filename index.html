@@ -220,70 +220,75 @@
         /* Floating Gift Box */
         .floating-gift {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
+            bottom: 40px;
+            right: 40px;
             z-index: 1000;
-            animation: float 3s ease-in-out infinite;
+            animation: float 4s ease-in-out infinite;
         }
 
         .gift-button {
-            background: linear-gradient(135deg, #0f183b 0%, #13110f 100%);
-            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+            width: 100px;
+            height: 100px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.1);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            color: white;
+            color: rgba(255, 255, 255, 0.9);
             font-family: 'Comic Sans MS', cursive, sans-serif;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .gift-button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4);
+            transform: scale(1.15) translateY(-5px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.2);
+            color: white;
         }
 
         .gift-button:active {
-            transform: scale(0.95);
+            transform: scale(1.05) translateY(-2px);
         }
 
         .gift-icon {
-            font-size: 1.5rem;
-            margin-bottom: 2px;
+            font-size: 2rem;
+            margin-bottom: 4px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
 
         @keyframes float {
             0%, 100% {
-                transform: translateY(0px);
+                transform: translateY(0px) rotate(0deg);
             }
             50% {
-                transform: translateY(-10px);
+                transform: translateY(-15px) rotate(2deg);
             }
         }
 
         /* Mobile responsive */
         @media (max-width: 600px) {
             .floating-gift {
-                bottom: 20px;
-                right: 20px;
+                bottom: 25px;
+                right: 25px;
             }
             
             .gift-button {
-                width: 70px;
-                height: 70px;
-                font-size: 0.7rem;
+                width: 85px;
+                height: 85px;
+                font-size: 0.8rem;
             }
             
             .gift-icon {
-                font-size: 1.3rem;
+                font-size: 1.8rem;
             }
         }
 
@@ -524,7 +529,7 @@
                                 <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/10)
+                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/5)
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Current Feelings:</strong><br>
@@ -552,7 +557,7 @@
                                 <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
                             </div>
                             <div style="margin-bottom: 10px;">
-                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/10)
+                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/5)
                             </div>
                             <div style="margin-bottom: 10px;">
                                 <strong>Current Feelings:</strong><br>
