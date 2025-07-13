@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import json
 import resend
+from datetime import datetime, timedelta
 
 # Load environment variables
 load_dotenv()
@@ -76,11 +77,34 @@ def parse_timestamp(ts):
             continue
     return datetime.min  # Put unparseable/missing dates at the end
 
+def parse_date(date_str):
+    """Parse date strings like '6/29/25' or '6/29/2025'"""
+    if not date_str:
+        return datetime.min
+    
+    try:
+        # Handle different date formats
+        if '/' in date_str:
+            parts = date_str.split('/')
+            month = int(parts[0])
+            day = int(parts[1])
+            year = int(parts[2])
+            
+            # Handle 2-digit years
+            if year < 100:
+                year += 2000
+                
+            return datetime(year, month, day)
+        else:
+            return datetime.min
+    except Exception:
+        return datetime.min
+
 def process_records(records):
     """Process and sort all records for efficient access"""
-    # Sort records by timestamp (most recent first)
-    sorted_records = sorted(records, key=lambda x: parse_timestamp(x.get('Timestamp', '')), reverse=True)
-    
+    # Sort records by date (most recent first), then by timestamp as tiebreaker
+    sorted_records = sorted(records, key=lambda x: (parse_date(x.get('What day is this for? ', '')).timestamp(), parse_timestamp(x.get('Timestamp', '')).timestamp()), reverse=True)
+    print([parse_date(r.get('What day is this for? ', '')).timestamp() for r in sorted_records])
     # Separate entries by user (already sorted by timestamp)
     amy_entries = [r for r in sorted_records if r.get('Who is filling this out right now.') == 'Amy']
     michael_entries = [r for r in sorted_records if r.get('Who is filling this out right now.') == 'Michael']
@@ -167,6 +191,90 @@ def get_memories_and_worries(processed_data):
     """Get memories and worries from processed data"""
     return processed_data['memories_and_worries']
 
+def is_record_from_last_7_days(record):
+    seven_days_ago = datetime.now() - timedelta(days=7)
+
+    date_str = record.get('What day is this for? ', '')
+    if not date_str:
+        return False
+    
+    # Use the parse_date function for consistency
+    date = parse_date(date_str)
+    return date >= seven_days_ago
+
+            
+def get_date_from_record(record):
+    date_str = record.get('What day is this for? ', '')
+    if not date_str:
+        return None
+
+    # Use the parse_date function for consistency
+    parsed_date = parse_date(date_str)
+    return parsed_date if parsed_date != datetime.min else None
+
+def generate_weekly_stats_from_data(processed_data):
+
+    sorted_records = processed_data['sorted_records']
+    amy_entries = processed_data['amy_entries']
+    michael_entries = processed_data['michael_entries']
+    hangout_entries = processed_data['hangout_entries']
+    minecraft_entries = processed_data['minecraft_entries']
+    kiss_entries = processed_data['kiss_entries']
+    memories_and_worries = processed_data['memories_and_worries']
+
+    amy_records_from_last_7_days = backfill_missing_dates_for_week(amy_entries[:9])
+    michael_records_from_last_7_days = backfill_missing_dates_for_week(michael_entries[:9])
+
+
+    # Backfill missing dates for each user
+    # backfilled_records = backfill_missing_dates(records_from_last_7_days)
+    
+    # print(f"Original records: {len(sorted_records)}")
+    # print(f"Backfilled records: {len(backfilled_records)}")
+    # print("Sample backfilled records:")
+    # for record in backfilled_records[:5]:
+    #     print(f"  {record.get('What day is this for? ', 'No date')} - {record.get('Who is filling this out right now.', 'Unknown')}")
+
+def backfill_missing_dates_for_week(records):
+    ascending_records = records[::-1]
+
+    last_record = ascending_records[0]
+    last_record_date = get_date_from_record(last_record)
+    backfilled_records = []
+    # start from 7 days ago. increment the day and index 
+        # if the record is the right day, and the record is within 7 days, add it and continue 
+         #
+    for record in ascending_records:
+
+        record_date = get_date_from_record(record)
+        print("current date:", record_date)
+
+        seven_days_ago = datetime.now() - timedelta(days=7)
+
+        if record_date == last_record_date + timedelta(days=1) and record_date >= seven_days_ago:
+            print(f"Record found for {record_date}")
+            backfilled_records.append(record)
+            last_record = record
+        else:
+            if record_date >= seven_days_ago:
+                record_date += timedelta(days=1)
+                record_copy = last_record.copy()
+                record_copy['What day is this for? '] = record_date 
+                backfilled_records.append(record_copy) 
+                print(f"Backfilled record for {record_date} with {last_record_date}")
+                last_record = record_copy
+            else:
+                print(f"Record {record_date} is not within 7 days")
+                last_record = record
+
+        record_date += timedelta(days=1)
+        last_record_date = record_date
+
+    return backfilled_records
+
+        
+
+
 def generate_weekly_email(processed_data):
     """Generate weekly email content"""
     status = get_status(processed_data)
@@ -248,21 +356,21 @@ def send_weekly_email():
         processed_data = process_records(records)
         
         # Generate email content
-        html_content = generate_weekly_email(processed_data)
-        
+        # html_content = generate_weekly_email(processed_data)
+        generate_weekly_stats_from_data(processed_data)
         # Send email
-        email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
+        # email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
         
-        print(f"Sending email to: {email_to_list}")
+        # print(f"Sending email to: {email_to_list}")
         
-        response = resend.Emails.send({
-            "from": EMAIL_FROM,
-            "to": email_to_list,
-            "subject": f"💕 Weekly Relationship Update - {datetime.now().strftime('%B %d, %Y')}",
-            "html": html_content
-        })
+        # response = resend.Emails.send({
+        #     "from": EMAIL_FROM,
+        #     "to": email_to_list,
+        #     "subject": f"IMPORTANT: Weekly Relationship Update - {datetime.now().strftime('%B %d, %Y')}",
+        #     "html": html_content
+        # })
         
-        print(f"Email sent successfully: {response['id']}")
+        # print(f"Email sent successfully: {response['id']}")
         return True
         
     except Exception as e:
