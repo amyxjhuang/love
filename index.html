@@ -265,6 +265,89 @@
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
 
+        /* Expandable card styles */
+        .expandable-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .expandable-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .expandable-card.expanded {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%) !important;
+        }
+
+        .card-details {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        /* Mobile full-screen overlay */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 10000;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .mobile-overlay.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .mobile-back-button {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .mobile-back-button:hover {
+            color: #f595eb;
+        }
+
+        .mobile-content {
+            padding: 0 10px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @keyframes float {
             0%, 100% {
                 transform: translateY(0px) rotate(0deg);
@@ -368,6 +451,17 @@
         
         <div id="hangout-data" class="hangout-cards" style="display: none;">
             <!-- Hangout data will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Mobile overlay for full-screen details -->
+    <div id="mobile-overlay" class="mobile-overlay">
+        <div class="mobile-back-button" onclick="closeMobileOverlay()">
+            <span>←</span>
+            <span>Back</span>
+        </div>
+        <div id="mobile-content" class="mobile-content">
+            <!-- Content will be populated by JavaScript -->
         </div>
     </div>
 
@@ -479,6 +573,10 @@
         function displayHangoutData(data) {
             document.getElementById('loading').style.display = 'none';
             
+            // Store data globally for mobile overlay access
+            window.lastAmyData = data.last_entries.amy || {};
+            window.lastMichaelData = data.last_entries.michael || {};
+            
             const hangoutContainer = document.getElementById('hangout-data');
             let html = '';
             // Status summary section
@@ -517,23 +615,34 @@
                     let strengthHearts = '❤️'.repeat(strength);
                     let stressHearts = '😫'.repeat(stress);
                     html += `
-                        <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #f595eb;">
+                        <div class="expandable-card" style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #f595eb; cursor: pointer; transition: all 0.3s ease;" onclick="toggleCard(this)">
                             <div style="text-align: center; margin-bottom: 15px;">
                                 <div class="card-user" style="background: #f595eb;">Amy</div>
                                 <div style="font-size: 0.9rem; color: #666;">As of ${formatTimestamp(data.last_entries.amy['Timestamp'])}</div>
+                           </div>
+                            <div class="card-summary">
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Likes Michael:</strong> ${data.last_entries.amy['Do you still like me? '] || 'N/A'}
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Stress Level:</strong> ${stressHearts} (${stress}/5)
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Current Feelings:</strong><br>
+                                    <span style="font-size: 0.9rem;">${data.last_entries.amy['Select all that you feel is true '] || 'No feelings recorded'}</span>
+                                </div>
                             </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>Likes Michael:</strong> ${data.last_entries.amy['Do you still like me? '] || 'N/A'}
-                            </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
-                            </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/5)
-                            </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>Current Feelings:</strong><br>
-                                <span style="font-size: 0.9rem;">${data.last_entries.amy['Select all that you feel is true '] || 'No feelings recorded'}</span>
+                            <div class="card-details" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                                ${Object.entries(data.last_entries.amy).map(([key, value]) => {
+                                    if (key === 'Timestamp') return '';
+                                    return `<div style="margin-bottom: 16px;">
+                                        <div style="font-weight: bold; color: #333; margin-bottom: 8px;">${key}</div>
+                                        <div style="color: #555; line-height: 1.4;">${value || 'N/A'}</div>
+                                    </div>`;
+                                }).join('')}
                             </div>
                         </div>
                     `;
@@ -545,23 +654,34 @@
                     let strengthHearts = '❤️'.repeat(strength);
                     let stressHearts = '😫'.repeat(stress);
                     html += `
-                        <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #ffa500;">
+                        <div class="expandable-card" style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #ffa500; cursor: pointer; transition: all 0.3s ease;" onclick="toggleCard(this)">
                             <div style="text-align: center; margin-bottom: 15px;">
                                 <div class="card-user" style="background: #ffa500;">Michael</div>
                                 <div style="font-size: 0.9rem; color: #666;">As of ${formatTimestamp(data.last_entries.michael['Timestamp'])}</div>
                             </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>Likes Amy:</strong> ${data.last_entries.michael['Do you still like me? '] || 'N/A'}
+                            <div class="card-summary">
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Likes Amy:</strong> ${data.last_entries.michael['Do you still like me? '] || 'N/A'}
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Stress Level:</strong> ${stressHearts} (${stress}/5)
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Current Feelings:</strong><br>
+                                    <span style="font-size: 0.9rem;">${data.last_entries.michael['Select all that you feel is true '] || 'No feelings recorded'}</span>
+                                </div>
                             </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>Relationship Strength:</strong> ${strengthHearts} (${strength}/5)
-                            </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>Stress Level:</strong> ${stressHearts} (${stress}/5)
-                            </div>
-                            <div style="margin-bottom: 10px;">
-                                <strong>Current Feelings:</strong><br>
-                                <span style="font-size: 0.9rem;">${data.last_entries.michael['Select all that you feel is true '] || 'No feelings recorded'}</span>
+                            <div class="card-details" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                                ${Object.entries(data.last_entries.michael).map(([key, value]) => {
+                                    if (key === 'Timestamp') return '';
+                                    return `<div style="margin-bottom: 16px;">
+                                        <div style="font-weight: bold; color: #333; margin-bottom: 8px;">${key}</div>
+                                        <div style="color: #555; line-height: 1.4;">${value || 'N/A'}</div>
+                                    </div>`;
+                                }).join('')}
                             </div>
                         </div>
                     `;
@@ -605,6 +725,62 @@
             
             hangoutContainer.innerHTML = html;
             hangoutContainer.style.display = 'grid';
+        }
+
+        // Check if device is mobile
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        // Toggle card expansion
+        function toggleCard(cardElement) {
+            if (isMobile()) {
+                // On mobile, show full-screen overlay
+                showMobileOverlay(cardElement);
+            } else {
+                // On desktop, toggle inline expansion
+                const detailsElement = cardElement.querySelector('.card-details');
+                const isExpanded = detailsElement.style.display !== 'none';
+                
+                if (isExpanded) {
+                    detailsElement.style.display = 'none';
+                    cardElement.classList.remove('expanded');
+                } else {
+                    detailsElement.style.display = 'block';
+                    cardElement.classList.add('expanded');
+                }
+            }
+        }
+
+        // Show mobile overlay with full details
+        function showMobileOverlay(cardElement) {
+            const user = cardElement.querySelector('.card-user').textContent;
+            const timestamp = cardElement.querySelector('div[style*="font-size: 0.9rem; color: #666"]').textContent;
+            const isAmy = user === 'Amy';
+            const data = isAmy ? window.lastAmyData : window.lastMichaelData;
+            
+            let html = `
+                <h2 style="color: ${isAmy ? '#f595eb' : '#ffa500'}; margin-bottom: 20px; text-align: center;">${user}'s Last Response</h2>
+                <div style="color: #666; text-align: center; margin-bottom: 30px;">${timestamp}</div>
+            `;
+            
+            Object.entries(data).forEach(([key, value]) => {
+                if (key === 'Timestamp') return;
+                html += `
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-weight: bold; color: #333; margin-bottom: 8px;">${key}</div>
+                        <div style="color: #555; line-height: 1.4;">${value || 'N/A'}</div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('mobile-content').innerHTML = html;
+            document.getElementById('mobile-overlay').classList.add('active');
+        }
+
+        // Close mobile overlay
+        function closeMobileOverlay() {
+            document.getElementById('mobile-overlay').classList.remove('active');
         }
 
         // Load data when page loads
