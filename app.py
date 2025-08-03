@@ -223,18 +223,13 @@ def generate_weekly_stats_from_data(processed_data):
     kiss_entries = processed_data['kiss_entries']
     memories_and_worries = processed_data['memories_and_worries']
 
+    print("STARTING BACKFILL FOR AMY")
     amy_records_from_last_7_days = backfill_missing_dates_for_week(amy_entries[:9])
+    print("STARTING BACKFILL FOR MICHAEL")
     michael_records_from_last_7_days = backfill_missing_dates_for_week(michael_entries[:9])
+    print("FINISHED BACKFILL")
 
-
-    # Backfill missing dates for each user
-    # backfilled_records = backfill_missing_dates(records_from_last_7_days)
-    
-    # print(f"Original records: {len(sorted_records)}")
-    # print(f"Backfilled records: {len(backfilled_records)}")
-    # print("Sample backfilled records:")
-    # for record in backfilled_records[:5]:
-    #     print(f"  {record.get('What day is this for? ', 'No date')} - {record.get('Who is filling this out right now.', 'Unknown')}")
+    get_data_from_backfilled_records(michael_records_from_last_7_days, amy_records_from_last_7_days)
 
 def backfill_missing_dates_for_week(records):
     records = records[::-1]
@@ -255,24 +250,113 @@ def backfill_missing_dates_for_week(records):
     curr_record = records.pop(0)
 
     while last_date <  datetime.now():
-        
-        while get_date_from_record(curr_record) < last_date and records:
-            curr_record = records.pop(0)
-        # print(f"curr_record: {get_date_from_record(curr_record)}")
-        if get_date_from_record(curr_record) == last_date:
-            print(f"{get_date_from_record(curr_record)} found")
-            record_to_append = curr_record
-            last_record = curr_record
-        else:
-            record_to_append = last_record.copy()
-            record_to_append['What day is this for? '] = last_date.strftime("%m/%d/%Y")
-            # print(f"{get_date_from_record(record_to_append)} backfilled")
 
+        while get_date_from_record(curr_record) < last_date - timedelta(days=1) and records:
+            curr_record = records.pop(0)
+
+        print(f"curr_record: {get_date_from_record(curr_record)}")
+        # print(get_date_from_record(curr_record), last_date)
+        if get_date_from_record(curr_record).month == last_date.month and get_date_from_record(curr_record).day == last_date.day:
+            print(f"{get_date_from_record(curr_record)} found")
+            record_to_append = curr_record.copy()
+            last_record = curr_record
+            # print(record_to_append.get("Did you hang out (in real life)? ", "No, everything is good"))
+            # print(record_to_append.get("How strong do you think our relationship is?", "No, everything is good"))
+            # print(record_to_append['Did you have any crash outs about us? \n\nSomething counts as a crash out if you spent >30 minutes worrying about the relationship, or had a bad thought that lasted multiple days. '])
+        else:
+            print(f"backfilling {last_date}")
+            # print(last_record)
+            record_to_append = {}
+            record_to_append['What day is this for? '] = last_date.strftime("%m/%d/%Y")
+            record_to_append['Did you hang out (in real life)? '] = 'No'
+            record_to_append['Select all that you feel is true '] = ''
+            record_to_append['Who is filling this out right now.'] = last_record.get('Who is filling this out right now.', '')
+            record_to_append['Timestamp'] = last_record.get('Timestamp', '')
+            record_to_append['Are you long distance right now?'] = last_record.get('Are you long distance right now?', '')
+            record_to_append['How strong do you think our relationship is?'] = last_record.get('How strong do you think our relationship is?', '')
+            record_to_append['How stressed are you about things outside of our relationship? '] = last_record.get('How stressed are you about things outside of our relationship? ', '')            # print(f"{get_date_from_record(record_to_append)} backfilled")
+            record_to_append['Do you still like me? '] = last_record.get('Do you still like me? ')
+            record_to_append['Did we argue? \n\nSomething counts as an argument if one party felt anger about something, and brought it up, and it was not immediately resolved. '] = 'No, everything is good.'
+            record_to_append['Did you have any crash outs about us? \n\nSomething counts as a crash out if you spent >30 minutes worrying about the relationship, or had a bad thought that lasted multiple days. '] = 'No, everything is good.'
         backfilled_records.append(record_to_append)
         last_date += timedelta(days=1)
 
     return backfilled_records    
 
+def get_data_from_backfilled_records(backfilled_records_michael, backfilled_records_amy):
+    """Get data from backfilled records"""
+    num_hangouts = 0 
+    num_crashouts_or_arguments = 0 
+    num_calls = 0
+    num_kisses = 0 
+    num_minecraft = 0 
+    strength_levels = [] 
+    amy_stress_levels = []
+    michael_stress_levels = [] 
+    days_long_distance = 0
+    num_sleepovers = 0
+    for i in range(7):
+        michael_record = backfilled_records_michael[i]
+        amy_record = backfilled_records_amy[i]
+        if michael_record.get('Did you hang out (in real life)? ') == 'Yes' or amy_record.get('Did you hang out (in real life)? ') == 'Yes':
+            num_hangouts += 1
+
+            hangout_activity_list = set()
+            print(michael_record.get("Check all that are true for this hangout.", "none").split(','))
+            # print(michael_record["Check all that are true for this hangout."])
+            hangout_activity_list.update(michael_record.get("Check all that are true for this hangout.", "").split(",")) 
+            hangout_activity_list.update(amy_record.get("Check all that are true for this hangout.", "").split(",")) 
+            if hangout_activity_list:
+                if ' We held hands and kissed' in hangout_activity_list:
+                    num_kisses += 1
+                if 'We played Minecraft' in hangout_activity_list:
+                    num_minecraft += 1
+                if ' We had a sleepover' in hangout_activity_list:
+                    num_sleepovers += 1
+        if michael_record.get('Are you long distance right now?') == 'Yes' or amy_record.get('Are you long distance right now?') == 'Yes':
+            days_long_distance += 1
+        crashout_key = "Did you have any crash outs about us? \n\nSomething counts as a crash out if you spent >30 minutes worrying about the relationship, or had a bad thought that lasted multiple days. "
+        argument_key = "Did we argue? \n\nSomething counts as an argument if one party felt anger about something, and brought it up, and it was not immediately resolved. "
+        had_crashout_or_argument = 'Yes' in (michael_record.get(crashout_key, "") + amy_record.get(crashout_key, "") + michael_record.get(argument_key, "") + amy_record.get(argument_key, ""))
+        if had_crashout_or_argument:
+            num_crashouts_or_arguments += 1
+        # if michael_record.get('Did you hang out (in real life)? ') == 'Yes' and michael_record.get('Check all that are true for this hangout.', '').lower() == 'kiss':
+        #     num_kisses += 1
+        # if michael_record.get('Did you hang out (in real life)? ') == 'Yes' and michael_record.get('Check all that are true for this hangout.', '').lower() == 'minecraft':
+        #     num_minecraft += 1
+
+        strength_levels.append(michael_record.get('How strong do you think our relationship is?', '5'))
+        strength_levels.append(amy_record.get('How strong do you think our relationship is?', '5'))
+        amy_stress_levels.append(amy_record.get('How stressed are you about things outside of our relationship? ', '1'))
+        michael_stress_levels.append(michael_record.get('How stressed are you about things outside of our relationship? ', '1'))
+        # if michael_record.get('Did you hang out (in real life)? ') == 'Yes' and michael_record.get('Check all that are true for this hangout.', '').lower() == 'kiss':
+   
+    print(michael_stress_levels)
+    print(amy_stress_levels)
+    print(strength_levels)
+    average_michael_stress = sum(int(level) for level in michael_stress_levels) / len(michael_stress_levels)
+    average_amy_stress = sum(int(level) for level in amy_stress_levels) / len(amy_stress_levels)
+    average_strength = sum(int(level) for level in strength_levels) / len(strength_levels)
+    print(f"average_michael_stress: {average_michael_stress}")
+    print(f"average_amy_stress: {average_amy_stress}")
+    print(f"average_strength: {average_strength}")
+    print(f"num_hangouts: {num_hangouts}")
+    print(f"num_sleepovers: {num_sleepovers}")
+    print(f"num_kisses: {num_kisses}")
+    print(f"num_minecraft: {num_minecraft}")
+    print(f"num_crashouts_or_arguments: {num_crashouts_or_arguments}")
+    print(f"num_long_distance: {days_long_distance}")
+    return {
+        'michael_stress_levels': michael_stress_levels,
+        'amy_stress_levels': amy_stress_levels,
+        'average_strength': average_strength,
+        'num_hangouts': num_hangouts,
+        'num_sleepovers': num_sleepovers,
+        'num_kisses': num_kisses,
+        'num_minecraft': num_minecraft,
+        'num_crashouts_or_arguments': num_crashouts_or_arguments,
+        'num_long_distance': days_long_distance,
+    }
 
 def generate_weekly_email(processed_data):
     """Generate weekly email content"""
@@ -357,6 +441,7 @@ def send_weekly_email():
         # Generate email content
         # html_content = generate_weekly_email(processed_data)
         generate_weekly_stats_from_data(processed_data)
+        
         # Send email
         # email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
         
