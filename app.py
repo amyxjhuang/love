@@ -204,6 +204,7 @@ def is_record_from_last_7_days(record):
 
             
 def get_date_from_record(record):
+    # print(f"get_date_from_record: {record.get('What day is this for? ', 'No date')}")
     date_str = record.get('What day is this for? ', '')
     if not date_str:
         return None
@@ -236,43 +237,41 @@ def generate_weekly_stats_from_data(processed_data):
     #     print(f"  {record.get('What day is this for? ', 'No date')} - {record.get('Who is filling this out right now.', 'Unknown')}")
 
 def backfill_missing_dates_for_week(records):
-    ascending_records = records[::-1]
-
-    last_record = ascending_records[0]
-    last_record_date = get_date_from_record(last_record)
-    backfilled_records = []
-    # start from 7 days ago. increment the day and index 
-        # if the record is the right day, and the record is within 7 days, add it and continue 
-         #
-    for record in ascending_records:
-
+    records = records[::-1]
+    seven_days_ago = datetime.now() - timedelta(days=7)
+    print(f"7 days ago: {seven_days_ago}")
+    last_record = records[0]
+    for record in records:
         record_date = get_date_from_record(record)
-        print("current date:", record_date)
+        if record_date >= seven_days_ago:
+            # Once we reach 7 days ago, stop
+            break 
+        last_record = record
 
-        seven_days_ago = datetime.now() - timedelta(days=7)
+    last_record_date = get_date_from_record(last_record)
+    print(f"last record date: {last_record_date}")
+    backfilled_records = []
+    last_date = seven_days_ago
+    curr_record = records.pop(0)
 
-        if record_date == last_record_date + timedelta(days=1) and record_date >= seven_days_ago:
-            print(f"Record found for {record_date}")
-            backfilled_records.append(record)
-            last_record = record
-        else:
-            if record_date >= seven_days_ago:
-                record_date += timedelta(days=1)
-                record_copy = last_record.copy()
-                record_copy['What day is this for? '] = record_date 
-                backfilled_records.append(record_copy) 
-                print(f"Backfilled record for {record_date} with {last_record_date}")
-                last_record = record_copy
-            else:
-                print(f"Record {record_date} is not within 7 days")
-                last_record = record
-
-        record_date += timedelta(days=1)
-        last_record_date = record_date
-
-    return backfilled_records
-
+    while last_date <  datetime.now():
         
+        while get_date_from_record(curr_record) < last_date and records:
+            curr_record = records.pop(0)
+        # print(f"curr_record: {get_date_from_record(curr_record)}")
+        if get_date_from_record(curr_record) == last_date:
+            print(f"{get_date_from_record(curr_record)} found")
+            record_to_append = curr_record
+            last_record = curr_record
+        else:
+            record_to_append = last_record.copy()
+            record_to_append['What day is this for? '] = last_date.strftime("%m/%d/%Y")
+            # print(f"{get_date_from_record(record_to_append)} backfilled")
+
+        backfilled_records.append(record_to_append)
+        last_date += timedelta(days=1)
+
+    return backfilled_records    
 
 
 def generate_weekly_email(processed_data):
