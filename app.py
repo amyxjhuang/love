@@ -14,7 +14,7 @@ load_dotenv()
 # Get the Google Sheet URL from environment variable
 SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
 RESEND_API_KEY = os.getenv('RESEND_API_KEY')
-EMAIL_FROM = os.getenv('EMAIL_FROM', 'onboarding@resend.dev')
+EMAIL_FROM = os.getenv('EMAIL_FROM', 'fineshyts@michaelamy5ever.com')
 EMAIL_TO = os.getenv('EMAIL_TO', 'fineshyts@michaelamy5ever.com')
 
 # Initialize Resend
@@ -229,7 +229,7 @@ def generate_weekly_stats_from_data(processed_data):
     michael_records_from_last_7_days = backfill_missing_dates_for_week(michael_entries[:9])
     print("FINISHED BACKFILL")
 
-    get_data_from_backfilled_records(michael_records_from_last_7_days, amy_records_from_last_7_days)
+    return get_data_from_backfilled_records(michael_records_from_last_7_days, amy_records_from_last_7_days)
 
 def backfill_missing_dates_for_week(records):
     records = records[::-1]
@@ -358,55 +358,99 @@ def get_data_from_backfilled_records(backfilled_records_michael, backfilled_reco
         'num_long_distance': days_long_distance,
     }
 
-def generate_weekly_email(processed_data):
+def generate_weekly_email(data):
     """Generate weekly email content"""
-    status = get_status(processed_data)
-    last_entries = get_last_entries(processed_data)
-    memories = get_memories_and_worries(processed_data)
+    michael_stress_levels = data['michael_stress_levels']
+    amy_stress_levels = data['amy_stress_levels']
+    average_strength = data['average_strength']
+    num_hangouts = data['num_hangouts']
+    num_sleepovers = data['num_sleepovers']
+    num_kisses = data['num_kisses']
+    num_minecraft = data['num_minecraft']
+    num_crashouts_or_arguments = data['num_crashouts_or_arguments']
+    num_long_distance = data['num_long_distance']
     
-    # Get recent memories (last 7 days or last 5 entries)
-    recent_memories = memories[:5] if memories else []
+    # Calculate averages
+    average_michael_stress = sum(int(level) for level in michael_stress_levels) / len(michael_stress_levels)
+    average_amy_stress = sum(int(level) for level in amy_stress_levels) / len(amy_stress_levels)
     
-    # Basic email template - customize this later
+    # Generate simple stress level graph
+    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    stress_graph_html = ""
+    
+    for i, day in enumerate(days):
+        michael_stress = int(michael_stress_levels[i]) if i < len(michael_stress_levels) else 0
+        amy_stress = int(amy_stress_levels[i]) if i < len(amy_stress_levels) else 0
+        
+        # Create simple bar representation
+        michael_bars = "█" * michael_stress
+        amy_bars = "█" * amy_stress
+        
+        stress_graph_html += f"""
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: bold;">{day}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #ffa500; font-family: monospace;">{michael_bars} ({michael_stress}/5)</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #f595eb; font-family: monospace;">{amy_bars} ({amy_stress}/5)</td>
+        </tr>
+        """
+    
     html_content = f"""
     <html>
     <head>
         <style>
-            body {{ font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }}
-            .header {{ background: linear-gradient(135deg, #f595eb 0%, #ffa500 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }}
-            .section {{ margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }}
-            .memory {{ margin: 10px 0; padding: 10px; background: white; border-left: 4px solid #f595eb; }}
-            .date {{ color: #666; font-size: 0.9em; }}
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            .header {{ text-align: center; margin-bottom: 30px; }}
+            .stats {{ margin: 20px 0; }}
+            .stress-graph {{ margin: 30px 0; }}
+            table {{ border-collapse: collapse; width: 100%; max-width: 600px; margin: 0 auto; }}
+            th {{ background-color: #f5f5f5; padding: 12px; border: 1px solid #ddd; text-align: center; }}
+            .link {{ margin: 10px 0; }}
+            .link a {{ color: #007bff; text-decoration: none; }}
+            .link a:hover {{ text-decoration: underline; }}
         </style>
     </head>
     <body>
         <div class="header">
-            <h1>💕 Weekly Relationship Update</h1>
-            <p>{datetime.now().strftime('%B %d, %Y')}</p>
+            <h1>Weekly Relationship Update</h1>
+            <p>Week of {datetime.now().strftime('%B %d, %Y')}</p>
         </div>
         
-        <div class="section">
-            <h2>📊 Status Summary</h2>
-            <p><strong>Last Hangout:</strong> {status.get('last_hangout_date', 'No recent hangouts')}</p>
-            <p><strong>Last Minecraft Day:</strong> {status.get('last_minecraft_date', 'No recent Minecraft')}</p>
-            <p><strong>Last Kiss:</strong> {status.get('last_kiss_date', 'No recent kisses')}</p>
+        <div class="stats">
+            <h2>Weekly Summary</h2>
+            <p><strong>Hangouts:</strong> {num_hangouts} days</p>
+            <p><strong>Sleepovers:</strong> {num_sleepovers}</p>
+            <p><strong>Kisses:</strong> {num_kisses}</p>
+            <p><strong>Minecraft sessions:</strong> {num_minecraft}</p>
+            <p><strong>Arguments/Crashouts:</strong> {num_crashouts_or_arguments}</p>
+            <p><strong>Long distance days:</strong> {num_long_distance}</p>
+            <p><strong>Average relationship strength:</strong> {average_strength:.1f}/5</p>
         </div>
         
-        <div class="section">
-            <h2>👥 Recent Survey Responses</h2>
-            {f'<p><strong>Amy:</strong> Relationship strength: {last_entries["amy"].get("How strong do you think our relationship is?", "N/A")}/5</p>' if last_entries.get('amy') else '<p>No recent response from Amy</p>'}
-            {f'<p><strong>Michael:</strong> Relationship strength: {last_entries["michael"].get("How strong do you think our relationship is?", "N/A")}/5</p>' if last_entries.get('michael') else '<p>No recent response from Michael</p>'}
-        </div>
-        
-        <div class="section">
-            <h2>💭 Recent Memories & Thoughts</h2>
-            {''.join([f'<div class="memory"><strong>{memory["user"]}</strong> ({memory["type"]}): {memory["text"]}<div class="date">{memory["date"]}</div></div>' for memory in recent_memories]) if recent_memories else '<p>No recent memories recorded</p>'}
-        </div>
-        
-        <div class="section">
-            <p style="text-align: center; color: #666;">
-                💕 Keep the love alive! 💕
+        <div class="stress-graph">
+            <h2>😰 Stress Levels This Week</h2>
+            <p><em>How stressed are you about things outside of our relationship? (1-5 scale)</em></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Michael's Stress</th>
+                        <th>Amy's Stress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {stress_graph_html}
+                </tbody>
+            </table>
+            <p style="text-align: center; margin-top: 20px;">
+                <strong>Average Stress:</strong> Michael: {average_michael_stress:.1f}/5 | Amy: {average_amy_stress:.1f}/5
             </p>
+        </div>
+        
+        <div class="link">
+            <a href="https://www.michaelamy5ever.com">MichaelAmy5Ever.com</a>
+        </div>
+        <div class="link">
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLScGEZqs93k0rtR1EhohvWi7JaMpLOPAKRik7_WWHgce-F4gfg/viewform">📝 Fill Out Daily Survey</a>
         </div>
     </body>
     </html>
@@ -439,23 +483,32 @@ def send_weekly_email():
         processed_data = process_records(records)
         
         # Generate email content
-        # html_content = generate_weekly_email(processed_data)
-        generate_weekly_stats_from_data(processed_data)
+        weekly_data = generate_weekly_stats_from_data(processed_data)
+        html_content = generate_weekly_email(weekly_data)
         
         # Send email
-        # email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
+        email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
         
-        # print(f"Sending email to: {email_to_list}")
+        print(f"Sending email to: {email_to_list}")
+        print(f"From email: {EMAIL_FROM}")
+        print(f"API key (first 10 chars): {RESEND_API_KEY[:10] if RESEND_API_KEY else 'None'}...")
+        print(f"HTML content length: {len(html_content)} characters")
         
-        # response = resend.Emails.send({
-        #     "from": EMAIL_FROM,
-        #     "to": email_to_list,
-        #     "subject": f"IMPORTANT: Weekly Relationship Update - {datetime.now().strftime('%B %d, %Y')}",
-        #     "html": html_content
-        # })
-        
-        # print(f"Email sent successfully: {response['id']}")
-        return True
+        try:
+            response = resend.Emails.send({
+                "from": EMAIL_FROM,
+                "to": email_to_list,
+                "subject": f"[TESTING]VERY IMPORTANT: Weekly Relationship Update - {datetime.now().strftime('%B %d, %Y')}",
+                "html": html_content
+            })
+            
+            print(f"Email sent successfully: {response['id']}")
+            return True
+        except resend.exceptions.ResendError as e:
+            print(f"Resend API Error: {e}")
+            print(f"Error details: {getattr(e, 'message', 'No message')}")
+            print(f"Error code: {getattr(e, 'code', 'No code')}")
+            raise
         
     except Exception as e:
         print(f"Error sending email: {e}")
@@ -582,30 +635,43 @@ def trigger_email():
 
 @app.route('/test-email')
 def test_simple_email():
-    print(f"Using API key: {RESEND_API_KEY[:10]}...")
-    print(f"From email: {EMAIL_FROM}")
-    print(f"To emails: {EMAIL_TO}")
-        
     """Send a simple test email"""
     try:
+        print(f"Using API key: {RESEND_API_KEY[:10] if RESEND_API_KEY else 'None'}...")
+        print(f"From email: {EMAIL_FROM}")
+        print(f"To emails: {EMAIL_TO}")
+        
         if not RESEND_API_KEY:
             return jsonify({"error": "RESEND_API_KEY not set"}), 500
         
         email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
         print(f"Sending email to: {email_to_list}")
-        response = resend.Emails.send({
-            "from": EMAIL_FROM,
-            "to": email_to_list,
-            "subject": "🧪 Test Email from Relationship Dashboard",
-            "html": "<h1>Test Email</h1><p>If you receive this, the email setup is working!</p>"
-        })
         
-        return jsonify({
-            "message": "Test email sent successfully!",
-            "id": response['id']
-        })
+        try:
+            response = resend.Emails.send({
+                "from": EMAIL_FROM,
+                "to": email_to_list,
+                "subject": "🧪 Test Email from Relationship Dashboard",
+                "html": "<h1>Test Email</h1><p>If you receive this, the email setup is working!</p>"
+            })
+            
+            return jsonify({
+                "message": "Test email sent successfully!",
+                "id": response['id']
+            })
+            
+        except resend.exceptions.ResendError as e:
+            print(f"Resend API Error: {e}")
+            print(f"Error details: {getattr(e, 'message', 'No message')}")
+            print(f"Error code: {getattr(e, 'code', 'No code')}")
+            return jsonify({
+                "error": f"Resend API Error: {e}",
+                "details": getattr(e, 'message', 'No message'),
+                "code": getattr(e, 'code', 'No code')
+            }), 500
         
     except Exception as e:
+        print(f"General error: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/face-match', methods=['POST'])
