@@ -451,6 +451,7 @@
         <div class="icon">🐅🐉❣️💓🗿🌷✨</div>
         <h1>relationship checker</h1>
         <p>amy and michael</p>
+        <p id="relationship-duration" style="color: #000000; font-size:14px; margin-bottom: 20px;"></p>
         
         <!-- Confetti container -->
         <div id="confetti-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: none;"></div>
@@ -797,6 +798,19 @@
             document.getElementById('mobile-overlay').classList.remove('active');
         }
 
+        // Calculate and display relationship duration
+        function updateRelationshipDuration() {
+            const startDate = new Date('2025-02-14');
+            const today = new Date();
+            const difference = today - startDate;
+            const daysSinceStart = Math.floor(difference / (1000 * 60 * 60 * 24));
+            
+            const durationElement = document.getElementById('relationship-duration');
+            if (durationElement) {
+                durationElement.textContent = `good job for being together for ${daysSinceStart} days!`;
+            }
+        }
+
         // Check if it's the 14th and show confetti
         function checkAndShowConfetti() {
             const today = new Date();
@@ -851,6 +865,9 @@
 
         // Load data when page loads
         loadHangoutData();
+        
+        // Update relationship duration
+        updateRelationshipDuration();
         
         // Check for confetti on page load
         checkAndShowConfetti();
