@@ -15,127 +15,150 @@
         }
 
         body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background: linear-gradient(135deg, #f595eb 0%, #ffa500 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #ffffff;
             min-height: 100vh;
             padding: 20px;
+            color: #37352f;
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            padding: 40px;
-            text-align: center;
+            background: #ffffff;
+            /* border: 1px solid #e1e5e9; */
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 48px;
+            text-align: left;
         }
 
         .icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 3rem;
+            margin-bottom: 24px;
+            text-align: center;
+            opacity: 0.8;
         }
 
         h1 {
-            font-size: 2.5rem;
-            color: #333;
-            margin-bottom: 15px;
-            font-weight: 300;
+            font-size: 2.25rem;
+            color: #37352f;
+            margin-bottom: 16px;
+            font-weight: 600;
+            text-align: center;
         }
 
         p {
-            color: #666;
-            font-size: 1.1rem;
+            color: #787774;
+            font-size: 1rem;
             line-height: 1.6;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
 
         .hangout-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
         }
 
         .hangout-card {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
+            background: #fafafa;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 32px;
             text-align: left;
-            border-left: 5px solid #f595eb;
+            transition: all 0.2s ease;
+        }
+
+        .hangout-card:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
         .hangout-card.minecraft {
-            border-left-color: #ffa500;
+            border-left: 3px solid #ffa500;
         }
 
         .card-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 15px;
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: #37352f;
+            margin-bottom: 20px;
             text-align: center;
+            padding: 16px 0;
+            border-bottom: 2px solid #e1e5e9;
+            background: #fafafa;
+            border-radius: 6px 6px 0 0;
+            margin: -24px -24px 20px -24px;
         }
 
         .card-date {
-            font-size: 1.1rem;
-            color: #f595eb;
-            font-weight: bold;
-            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #787774;
+            font-weight: 500;
+            margin-bottom: 12px;
         }
 
         .card-user {
             background: #f595eb;
             color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
+            padding: 6px 12px;
+            border-radius: 4px;
             display: inline-block;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 16px;
         }
 
         .card-memory {
             background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #eee;
+            padding: 16px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            border: 1px solid #e1e5e9;
         }
 
         .card-activities {
-            font-size: 0.9rem;
-            color: #666;
+            font-size: 0.875rem;
+            color: #787774;
         }
 
         .loading {
             text-align: center;
-            padding: 30px;
-            color: #666;
+            padding: 32px;
+            color: #787774;
+            font-size: 1rem;
         }
 
         .error {
-            background: #fee;
-            color: #c33;
-            padding: 20px;
-            border-radius: 10px;
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 4px;
             text-align: center;
+            border: 1px solid #fecaca;
         }
 
         @media (max-width: 768px) {
             .container {
-                padding: 30px 20px;
+                padding: 32px 24px;
+                margin: 16px;
+                border-radius: 6px;
             }
             
             h1 {
-                font-size: 2rem;
+                font-size: 1.875rem;
             }
             
             .icon {
-                font-size: 3rem;
+                font-size: 2.5rem;
             }
 
             .hangout-cards {
                 grid-template-columns: 1fr;
+                gap: 20px;
             }
         }
 
@@ -150,71 +173,97 @@
             align-items: flex-start;
             max-width: 90%;
             margin-left: 0;
-            background: #ffe6f7;
-            border-radius: 22px;
-            box-shadow: 0 4px 16px rgba(245,149,235,0.10);
-            padding: 26px 28px 26px 24px;
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 20px;
             position: relative;
-            font-size: 1.18rem;
-            font-family: 'Times New Roman', Times, serif;
-            color: #333;
+            font-size: 1rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            color: #37352f;
             min-height: 60px;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
         }
         .bubble.michael {
-            background: #fff3e0;
-            box-shadow: 0 4px 16px rgba(255,165,0,0.10);
+            background: #fef7e0;
+            border-color: #fbbf24;
         }
         .bubble-emoji {
-            font-size: 2.1rem;
-            margin-right: 18px;
+            font-size: 1.5rem;
+            margin-right: 16px;
             flex-shrink: 0;
-            margin-top: -2px;
+            margin-top: 0;
         }
         .bubble-date {
-            font-size: 1.02rem;
-            color: #aaa;
+            font-size: 0.875rem;
+            color: #787774;
             margin-top: 8px;
-            margin-left: 8px;
+            margin-left: 0;
         }
         .bubble-text {
             flex: 1;
             z-index: 1;
             word-break: break-word;
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 1.18rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            font-size: 1rem;
         }
         .status-summary-list {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 16px;
             align-items: flex-start;
-            margin-top: 10px;
-            margin-bottom: 6px;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            padding: 4 8px;
         }
         .status-summary-item {
             display: flex;
             flex-direction: row;
             align-items: center;
-            font-size: 1.13rem;
-            color: #333;
-            gap: 10px;
+            font-size: 1rem;
+            color: #37352f;
+            gap: 16px;
+            padding: 4px 4px;
+            background: #fafafa;
+            border-radius: 6px;
+            /* border: 1px solid #e1e5e9; */
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .status-summary-item:hover {
+            background: #f5f5f5;
+            /* border-color: #d1d5db; */
         }
         .status-summary-label {
-            font-weight: bold;
-            min-width: 130px;
+            font-weight: 600;
+            min-width: 160px;
+            color: #787774;
+            /* flex-shrink: 0; */
+        }
+        .status-summary-value {
+            font-weight: 600;
+            color: #37352f;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e1e5e9;
+            min-width: 80px;
+            text-align: center;
         }
         .status-summary-value.hangout {
             color: #f595eb;
-            font-weight: bold;
+            border-color: #f595eb;
+            background: #fef7ff;
         }
         .status-summary-value.minecraft {
-            color: #ffa500;
-            font-weight: bold;
+            color: #f59e0b;
+            border-color: #f59e0b;
+            background: #fef7e0;
         }
         .status-summary-value.kiss {
             color: #f595eb;
-            font-weight: bold;
+            border-color: #f595eb;
+            background: #fef7ff;
         }
 
         /* Floating Gift Box */
@@ -388,17 +437,17 @@
 
         @media (max-width: 600px) {
             .container {
-                padding: 10px 2px;
-                border-radius: 10px;
+                padding: 16px 8px;
+                border-radius: 8px;
                 width: 100% !important;
                 max-width: none !important;
                 box-sizing: border-box;
             }
             .hangout-card {
-                padding: 12px 6px !important;
-                border-radius: 10px !important;
-                margin-bottom: 18px !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.04) !important;
+                padding: 20px 16px !important;
+                border-radius: 8px !important;
+                margin-bottom: 20px !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
                 width: 100% !important;
                 box-sizing: border-box;
                 overflow-wrap: break-word;
@@ -450,8 +499,7 @@
     <div class="container">
         <div class="icon">🐅🐉❣️💓🗿🌷✨</div>
         <h1>relationship checker</h1>
-        <p>amy and michael</p>
-        <p id="relationship-duration" style="color: #000000; font-size:14px; margin-bottom: 20px;"></p>
+        <!-- <p>amy and michael</p> -->
         
         <!-- Confetti container -->
         <div id="confetti-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: none;"></div>
@@ -597,22 +645,24 @@
             // Status summary section
             html += `
                 <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
-                    <div class="card-title">📊 Status Summary</div>
                     <div class="status-summary-list">
                         <div class="status-summary-item">
                             <span class="status-summary-label">⛏️ last Minecraft day:</span>
                             <span class="status-summary-value minecraft">${data.status.last_minecraft_date || 'No data'}</span>
                         </div>
+                        <div class="status-summary-item" id="relationship-duration"></div>
+
                         <div class="status-summary-item">
-                            <span class="status-summary-label">💋 last Kiss:</span>
+                            <span class="status-summary-label">💋  last Kiss:</span>
                             <span class="status-summary-value kiss">${data.status.last_kiss_date || 'No data'}</span>
                         </div>
                         ${data.monogamous ? `<div class="status-summary-item">
-                            <span class="status-summary-label">✅ monogamous</span>
+                            <span class="status-summary-label">✅  monogamous</span>
                         </div>` : ''}
                         ${data.status.is_long_distance == 'Yes' ? `<div class="status-summary-item">
-                            <span class="status-summary-label">💔 currently long distance</span>
+                            <span class="status-summary-label">💔  currently long distance</span>
                         </div>` : ''}
+
                     </div>
                 </div>
             `;
@@ -740,6 +790,9 @@
             
             hangoutContainer.innerHTML = html;
             hangoutContainer.style.display = 'grid';
+            
+            // Update relationship duration after the DOM is populated
+            updateRelationshipDuration();
         }
 
         // Check if device is mobile
@@ -807,7 +860,10 @@
             
             const durationElement = document.getElementById('relationship-duration');
             if (durationElement) {
-                durationElement.textContent = `good job for being together for ${daysSinceStart} days!`;
+                durationElement.innerHTML = `
+                    <span class="status-summary-label">🇨🇳 Together for:</span>
+                    <span class="status-summary-value hangout">${daysSinceStart} days</span>
+                `;
             }
         }
 
@@ -865,9 +921,6 @@
 
         // Load data when page loads
         loadHangoutData();
-        
-        // Update relationship duration
-        updateRelationshipDuration();
         
         // Check for confetti on page load
         checkAndShowConfetti();
