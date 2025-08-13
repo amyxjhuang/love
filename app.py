@@ -8,13 +8,15 @@ import json
 import resend
 from datetime import datetime, timedelta
 
+import resend.emails
+
 # Load environment variables
 load_dotenv()
 
 # Get the Google Sheet URL from environment variable
 SHEET_URL = os.getenv('GOOGLE_SHEET_URL')
 RESEND_API_KEY = os.getenv('RESEND_API_KEY')
-EMAIL_FROM = os.getenv('EMAIL_FROM', 'fineshyts@michaelamy5ever.com')
+EMAIL_FROM = os.getenv('EMAIL_FROM', 'onboarding@resend.dev')
 EMAIL_TO = os.getenv('EMAIL_TO', 'fineshyts@michaelamy5ever.com')
 
 # Initialize Resend
@@ -490,20 +492,34 @@ def send_weekly_email():
         email_to_list = [email.strip() for email in EMAIL_TO.split(',')]
         
         print(f"Sending email to: {email_to_list}")
-        print(f"From email: {EMAIL_FROM}")
         print(f"API key (first 10 chars): {RESEND_API_KEY[:10] if RESEND_API_KEY else 'None'}...")
         print(f"HTML content length: {len(html_content)} characters")
         
         try:
-            response = resend.Emails.send({
-                "from": EMAIL_FROM,
-                "to": email_to_list,
-                "subject": f"[TESTING]VERY IMPORTANT: Weekly Relationship Update - {datetime.now().strftime('%B %d, %Y')}",
-                "html": html_content
-            })
+
+            response = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {RESEND_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "from": "God <onboarding@resend.dev>",  # must match verified domain
+                    "to": email_to_list,
+                    "subject": f"[TESTING]VERY IMPORTANT: Weekly Relationship Update - {datetime.now().strftime('%B %d, %Y')}",
+                    "html": html_content
+                }
+            )
+
+            # response = resend.emails.send({
+            #     "from": EMAIL_FROM,
+            #     "to": email_to_list,
+            #     "subject": f"[TESTING]VERY IMPORTANT: Weekly Relationship Update - {datetime.now().strftime('%B %d, %Y')}",
+            #     "html": html_content
+            # })
             
-            print(f"Email sent successfully: {response['id']}")
-            return True
+            print(response.json())
+            return response.json()
         except resend.exceptions.ResendError as e:
             print(f"Resend API Error: {e}")
             print(f"Error details: {getattr(e, 'message', 'No message')}")
@@ -622,12 +638,9 @@ def test():
 def trigger_email():
     """Manually trigger weekly email (for testing)"""
     try:
-        success = send_weekly_email()
-        if success:
-            return jsonify({
-                "message": "Weekly email sent successfully!",
-                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            })
+        response = send_weekly_email()
+        if response:
+            return response
         else:
             return jsonify({"error": "Failed to send email"}), 500
     except Exception as e:
