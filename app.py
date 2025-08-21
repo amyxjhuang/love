@@ -113,16 +113,16 @@ def process_records(records):
     
     # Get hangout entries sorted by date (most recent first)
     hangout_entries = [r for r in sorted_records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ')]
-    hangout_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
+    # hangout_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
     
     # Get Minecraft hangout entries sorted by date
     minecraft_entries = [r for r in sorted_records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ') and 'We played Minecraft' in r.get('Check all that are true for this hangout.', '')]
-    minecraft_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
+    # minecraft_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
     
     # Get kiss hangout entries sorted by date
-    kiss_entries = [r for r in sorted_records if r.get('Did you hang out (in real life)? ') == 'Yes' and r.get('What day is this for? ') and ('We held hands and kissed' in r.get('Check all that are true for this hangout.', '') or 'We kissed' in r.get('Check all that are true for this hangout.', ''))]
-    kiss_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
-    
+    kiss_entries = [r for r in sorted_records if r.get('Did you hang out (in real life)? ') == 'Yes' and ('We held hands and kissed' in r.get('Check all that are true for this hangout.', '') or 'kissed' in r.get('Check all that are true for this hangout.', ''))]
+    # kiss_entries.sort(key=lambda x: x['What day is this for? '], reverse=True)
+    print(len(kiss_entries), [r['What day is this for? '] for r in kiss_entries])
     # Collect memories and worries (already sorted by timestamp from sorted_records)
     memories_and_worries = []
     for record in sorted_records:
@@ -175,6 +175,7 @@ def process_records(records):
 def get_status(processed_data):
     """Get status summary from processed data"""
     print(processed_data['sorted_records'][0])
+
     return {
         'is_long_distance': processed_data['sorted_records'][0]['Are you long distance right now?'] if processed_data['sorted_records'] else None,
         'last_hangout_date': processed_data['hangout_entries'][0]['What day is this for? '] if processed_data['hangout_entries'] else None,
