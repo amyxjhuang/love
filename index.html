@@ -867,12 +867,12 @@
             const today = new Date();
             const difference = today - startDate;
             const daysSinceStart = Math.floor(difference / (1000 * 60 * 60 * 24));
-            
+            const monthsSinceStart = Math.floor(daysSinceStart / 30.417);
             const durationElement = document.getElementById('relationship-duration');
             if (durationElement) {
                 durationElement.innerHTML = `
                     <span class="status-summary-label">🇨🇳 Together for:</span>
-                    <span class="status-summary-value hangout">${daysSinceStart} days</span>
+                    <span class="status-summary-value hangout">${monthsSinceStart} months (${daysSinceStart} days total)</span>
                 `;
             }
         }
