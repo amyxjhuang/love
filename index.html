@@ -216,6 +216,35 @@
             margin-bottom: 8px;
             padding: 4 8px;
         }
+
+        .status-dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e1e5e9;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #37352f;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
         .status-summary-item {
             display: flex;
             flex-direction: row;
@@ -435,6 +464,25 @@
             }
         }
 
+        @media (max-width: 768px) {
+            .status-dashboard {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .chart-container {
+                padding: 16px;
+            }
+            
+            .chart-wrapper {
+                height: 250px;
+            }
+            
+            .chart-title {
+                font-size: 1rem;
+            }
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 16px 8px;
@@ -504,6 +552,9 @@
 
   gtag('config', 'G-EVWRDX0BS3');
 </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <body>
     <div class="container">
@@ -652,27 +703,37 @@
             
             const hangoutContainer = document.getElementById('hangout-data');
             let html = '';
-            // Status summary section
+            // Status summary section with chart
             html += `
                 <div class="hangout-card" style="grid-column: 1 / -1; margin-bottom: 30px;">
-                    <div class="status-summary-list">
-                        <div class="status-summary-item">
-                            <span class="status-summary-label">⛏️ last Minecraft day:</span>
-                            <span class="status-summary-value minecraft">${data.status.last_minecraft_date || 'No data'}</span>
-                        </div>
-                        <div class="status-summary-item" id="relationship-duration"></div>
+                    <div class="status-dashboard">
+                        <div class="status-summary-list">
+                            <div class="status-summary-item">
+                                <span class="status-summary-label">⛏️ last Minecraft day:</span>
+                                <span class="status-summary-value minecraft">${data.status.last_minecraft_date || 'No data'}</span>
+                            </div>
+                            <div class="status-summary-item" id="relationship-duration"></div>
 
-                        <div class="status-summary-item">
-                            <span class="status-summary-label">💋  last Kiss:</span>
-                            <span class="status-summary-value kiss">${data.status.last_kiss_date || 'No data'}</span>
+                            <div class="status-summary-item">
+                                <span class="status-summary-label">💋  last Kiss:</span>
+                                <span class="status-summary-value kiss">${data.status.last_kiss_date || 'No data'}</span>
+                            </div>
+                            ${data.monogamous ? `<div class="status-summary-item">
+                                <span class="status-summary-label">✅  monogamous</span>
+                            </div>` : ''}
+                            ${data.status.is_long_distance == 'Yes' ? `<div class="status-summary-item">
+                                <span class="status-summary-label">💔  currently long distance</span>
+                            </div>` : ''}
                         </div>
-                        ${data.monogamous ? `<div class="status-summary-item">
-                            <span class="status-summary-label">✅  monogamous</span>
-                        </div>` : ''}
-                        ${data.status.is_long_distance == 'Yes' ? `<div class="status-summary-item">
-                            <span class="status-summary-label">💔  currently long distance</span>
-                        </div>` : ''}
-
+                        
+                        <div class="chart-container">
+                            <div class="chart-wrapper">
+                                <canvas id="trendsChart"></canvas>
+                                <div id="chart-error" style="display: none; color: #dc2626; text-align: center; padding: 20px;">
+                                    Chart failed to load. Check console for details.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -803,6 +864,212 @@
             
             // Update relationship duration after the DOM is populated
             updateRelationshipDuration();
+            
+            // Create the trends chart if data is available
+            if (data['30_day_trends']) {
+                console.log('30_day_trends data available, creating chart...');
+                createTrendsChart(data['30_day_trends']);
+            } else {
+                console.log('No 30_day_trends data found in response');
+            }
+        }
+
+        // Create trends chart
+        function createTrendsChart(trendData) {
+            const ctx = document.getElementById('trendsChart');
+            console.log('Creating trends chart...');
+            console.log('Canvas element found:', !!ctx);
+            console.log('Trend data:', trendData);
+            
+            if (!ctx) {
+                console.error('Chart canvas not found!');
+                return;
+            }
+            if (!trendData) {
+                console.error('No trend data provided!');
+                return;
+            }
+            
+            // Format dates for display (show only day/month)
+            const formattedDates = trendData.dates.map(date => {
+                const d = new Date(date);
+                return `${d.getMonth() + 1}/${d.getDate()}`;
+            });
+            
+            console.log('Formatted dates:', formattedDates.slice(0, 5));
+            console.log('Relationship strength data:', trendData.relationship_strength.slice(0, 10));
+            console.log('Amy stress data:', trendData.amy_stress.slice(0, 10));
+            console.log('Michael stress data:', trendData.michael_stress.slice(0, 10));
+            
+            // Create the chart
+            try {
+                // Custom plugin to add emoji markers for crashouts
+                const emojiPlugin = {
+                    id: 'emojiMarkers',
+                    afterDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const meta = chart.getDatasetMeta(3); // Crashouts dataset index
+                        if (!meta) return;
+                        
+                        meta.data.forEach((point, index) => {
+                            if (point && !point.skip && trendData.crashouts_or_arguments[index] === 1) {
+                                const x = point.x;
+                                const y = point.y;
+                                
+                                // Draw emoji
+                                ctx.save();
+                                ctx.font = '20px Arial';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText('😫', x, y);
+                                ctx.restore();
+                            }
+                        });
+                    }
+                };
+                
+                // Register the plugin
+                Chart.register(emojiPlugin);
+                
+                new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: formattedDates,
+                    datasets: [
+                        {
+                            label: 'Relationship Strength',
+                            data: trendData.relationship_strength.map(val => val !== null ? val : null),
+                            borderColor: 'rgb(100, 0, 244)',
+                            backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            spanGaps: true,
+                            pointRadius: 1,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(100, 0, 244)',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: "Amy's Stress",
+                            data: trendData.amy_stress.map(val => val !== null ? val : null),
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            spanGaps: true,
+                            pointRadius: 1,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#f44336',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: "Michael's Stress",
+                            data: trendData.michael_stress.map(val => val !== null ? val : null),
+                            borderColor: '#ff9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            spanGaps: true,
+                            pointRadius: 1,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: '#ff9800',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Crashouts/Arguments',
+                            data: trendData.crashouts_or_arguments.map(val => val === 1 ? 6 : null),
+                            borderColor: 'transparent',
+                            backgroundColor: 'transparent',
+                            borderWidth: 0,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            pointBackgroundColor: 'transparent',
+                            pointBorderColor: 'transparent',
+                            pointBorderWidth: 0,
+                            showLine: false,
+                            spanGaps: false,
+                            hidden: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        emojiMarkers: true,
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return new Date(trendData.dates[index]).toLocaleDateString();
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    if (value === null) return context.dataset.label + ': No data';
+                                    return context.dataset.label + ': ' + value + '/5';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Date',
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            ticks: {
+                                maxTicksLimit: 8,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            min: 0,
+                            max: 5,
+                            title: {
+                                display: true,
+                                text: 'Rating (1-5)',
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+            } catch (error) {
+                console.error('Error creating chart:', error);
+                document.getElementById('chart-error').style.display = 'block';
+            }
         }
 
         // Check if device is mobile

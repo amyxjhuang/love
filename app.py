@@ -194,6 +194,142 @@ def get_memories_and_worries(processed_data):
     """Get memories and worries from processed data"""
     return processed_data['memories_and_worries']
 
+def get_30_day_trends(processed_data):
+    """Get 30-day trend data for graphing"""
+    from datetime import datetime, timedelta
+    
+    # Get records from the last 30 days
+    thirty_days_ago = datetime.now() - timedelta(days=30)
+    
+    # Filter records from last 30 days
+    recent_records = []
+    for record in processed_data['sorted_records']:
+        record_date = get_date_from_record(record)
+        if record_date and record_date >= thirty_days_ago:
+            recent_records.append(record)
+    
+    # Create a dictionary to store daily data
+    daily_data = {}
+    for record in recent_records:
+        date_key = get_date_from_record(record).strftime('%Y-%m-%d')
+        if date_key not in daily_data:
+            daily_data[date_key] = {
+                'amy': None,
+                'michael': None
+            }
+        
+        user = record.get('Who is filling this out right now.', '')
+        if user in ['Amy', 'Michael']:
+            daily_data[date_key][user.lower()] = record
+    
+    # Generate complete 30-day dataset (backfill missing days)
+    dates = []
+    relationship_strength = []
+    amy_stress = []
+    michael_stress = []
+    hangouts = []
+    kisses = []
+    minecraft = []
+    crashouts_or_arguments = []
+    
+    # Start from 30 days ago and go to today
+    current_date = thirty_days_ago
+    while current_date <= datetime.now():
+        date_str = current_date.strftime('%Y-%m-%d')
+        dates.append(date_str)
+        
+        day_data = daily_data.get(date_str, {'amy': None, 'michael': None})
+        
+        # Get relationship strength (average of both users if available)
+        amy_strength = None
+        michael_strength = None
+        if day_data['amy']:
+            try:
+                amy_strength = int(day_data['amy'].get('How strong do you think our relationship is?', '0') or '0')
+            except:
+                amy_strength = 0
+        if day_data['michael']:
+            try:
+                michael_strength = int(day_data['michael'].get('How strong do you think our relationship is?', '0') or '0')
+            except:
+                michael_strength = 0
+        
+        # Average strength (or use single value if only one available)
+        if amy_strength is not None and michael_strength is not None:
+            avg_strength = (amy_strength + michael_strength) / 2
+        elif amy_strength is not None:
+            avg_strength = amy_strength
+        elif michael_strength is not None:
+            avg_strength = michael_strength
+        else:
+            avg_strength = None
+        relationship_strength.append(avg_strength)
+        
+        # Get stress levels
+        amy_stress_val = None
+        michael_stress_val = None
+        if day_data['amy']:
+            try:
+                amy_stress_val = int(day_data['amy'].get('How stressed are you about things outside of our relationship? ', '0') or '0')
+            except:
+                amy_stress_val = 0
+        if day_data['michael']:
+            try:
+                michael_stress_val = int(day_data['michael'].get('How stressed are you about things outside of our relationship? ', '0') or '0')
+            except:
+                michael_stress_val = 0
+        
+        amy_stress.append(amy_stress_val)
+        michael_stress.append(michael_stress_val)
+        
+        # Check for hangout activities
+        hangout_activities = set()
+        kiss_day = 0
+        minecraft_day = 0
+        hangout_day = 0
+        crashout_or_argument_day = 0
+        
+        for user_data in [day_data['amy'], day_data['michael']]:
+            if user_data and user_data.get('Did you hang out (in real life)? ') == 'Yes':
+                hangout_day = 1
+                activities = user_data.get('Check all that are true for this hangout.', '')
+                if activities:
+                    hangout_activities.update(activities.split(','))
+        
+        if 'We held hands and kissed' in hangout_activities or 'kissed' in str(hangout_activities):
+            kiss_day = 1
+        if 'We played Minecraft' in hangout_activities:
+            minecraft_day = 1
+        
+        # Check for crashouts or arguments
+        for user_data in [day_data['amy'], day_data['michael']]:
+            if user_data:
+                crashout_key = "Did you have any crash outs about us? \n\nSomething counts as a crash out if you spent >30 minutes worrying about the relationship, or had a bad thought that lasted multiple days. "
+                argument_key = "Did we argue? \n\nSomething counts as an argument if one party felt anger about something, and brought it up, and it was not immediately resolved. "
+                
+                if (user_data.get(crashout_key, '') == 'Yes' or 
+                    user_data.get(argument_key, '') == 'Yes'):
+                    crashout_or_argument_day = 1
+                    break
+        
+        hangouts.append(hangout_day)
+        kisses.append(kiss_day)
+        minecraft.append(minecraft_day)
+        crashouts_or_arguments.append(crashout_or_argument_day)
+        
+        current_date += timedelta(days=1)
+    
+    return {
+        'dates': dates,
+        'relationship_strength': relationship_strength,
+        'amy_stress': amy_stress,
+        'michael_stress': michael_stress,
+        'hangouts': hangouts,
+        'kisses': kisses,
+        'minecraft': minecraft,
+        'crashouts_or_arguments': crashouts_or_arguments
+    }
+
 def is_record_from_last_7_days(record):
     seven_days_ago = datetime.now() - timedelta(days=7)
 
@@ -576,6 +712,9 @@ def hangout_data():
         # Get all memories and worries
         memories_and_worries = get_memories_and_worries(processed_data)
         
+        # Get 30-day trend data
+        trend_data = get_30_day_trends(processed_data)
+        
         # Check if relationship is monogamous
         monogamous = not any(
             'non monogamous' in (record.get('Select all that you feel is true ', '') or '').lower()
@@ -586,6 +725,7 @@ def hangout_data():
             'status': status_data,
             'last_entries': last_entries_data,
             'memories_and_worries': memories_and_worries,
+            '30_day_trends': trend_data,
             'monogamous': monogamous
         })
         
