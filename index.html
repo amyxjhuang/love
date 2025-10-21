@@ -727,6 +727,23 @@
                         </div>
                         
                         <div class="chart-container">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <div class="chart-title">📊 Trends</div>
+                                <div class="chart-toggle">
+                                    <button id="ytdToggle" onclick="toggleYTD()" style="
+                                        background: #f8f9fa;
+                                        border: 1px solid #e1e5e9;
+                                        border-radius: 6px;
+                                        padding: 8px 16px;
+                                        font-size: 0.9rem;
+                                        cursor: pointer;
+                                        transition: all 0.2s ease;
+                                        color: #37352f;
+                                    " onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f8f9fa'">
+                                        <span id="ytdToggleText">Show All</span>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="chart-wrapper">
                                 <canvas id="trendsChart"></canvas>
                                 <div id="chart-error" style="display: none; color: #dc2626; text-align: center; padding: 20px;">
@@ -865,6 +882,10 @@
             // Update relationship duration after the DOM is populated
             updateRelationshipDuration();
             
+            // Store trend data globally for time period toggle functionality
+            window.allTrendData = data['trend_data'];
+            window.isAllTimeEnabled = false; // Default to showing 30 day data
+            
             // Create the trends chart if data is available
             if (data['trend_data']) {
                 console.log('get_trends data available, creating chart...');
@@ -890,16 +911,45 @@
                 return;
             }
             
+            // Destroy existing chart if it exists
+            if (window.trendsChartInstance) {
+                window.trendsChartInstance.destroy();
+                window.trendsChartInstance = null;
+            }
+            
+            // Filter data for 30 days if All Time is not enabled
+            let filteredData = trendData;
+            if (!window.isAllTimeEnabled) {
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                const filteredIndices = [];
+                
+                trendData.dates.forEach((date, index) => {
+                    const d = new Date(date);
+                    if (d >= thirtyDaysAgo) {
+                        filteredIndices.push(index);
+                    }
+                });
+                
+                filteredData = {
+                    dates: filteredIndices.map(i => trendData.dates[i]),
+                    relationship_strength: filteredIndices.map(i => trendData.relationship_strength[i]),
+                    amy_stress: filteredIndices.map(i => trendData.amy_stress[i]),
+                    michael_stress: filteredIndices.map(i => trendData.michael_stress[i]),
+                    crashouts_or_arguments: filteredIndices.map(i => trendData.crashouts_or_arguments[i])
+                };
+            }
+            
             // Format dates for display (show only day/month)
-            const formattedDates = trendData.dates.map(date => {
+            const formattedDates = filteredData.dates.map(date => {
                 const d = new Date(date);
                 return `${d.getMonth() + 1}/${d.getDate()}`;
             });
             
             console.log('Formatted dates:', formattedDates.slice(0, 5));
-            console.log('Relationship strength data:', trendData.relationship_strength.slice(0, 10));
-            console.log('Amy stress data:', trendData.amy_stress.slice(0, 10));
-            console.log('Michael stress data:', trendData.michael_stress.slice(0, 10));
+            console.log('Relationship strength data:', filteredData.relationship_strength.slice(0, 10));
+            console.log('Amy stress data:', filteredData.amy_stress.slice(0, 10));
+            console.log('Michael stress data:', filteredData.michael_stress.slice(0, 10));
             
             // Create the chart
             try {
@@ -931,14 +981,14 @@
                 // Register the plugin
                 Chart.register(emojiPlugin);
                 
-                new Chart(ctx, {
+                window.trendsChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: formattedDates,
                     datasets: [
                         {
                             label: 'Relationship Strength',
-                            data: trendData.relationship_strength.map(val => val !== null ? val : null),
+                            data: filteredData.relationship_strength.map(val => val !== null ? val : null),
                             borderColor: 'rgb(100, 0, 244)',
                             backgroundColor: 'rgba(255, 0, 0, 0.2)',
                             borderWidth: 3,
@@ -951,7 +1001,7 @@
                         },
                         {
                             label: "Amy's Stress",
-                            data: trendData.amy_stress.map(val => val !== null ? val : null),
+                            data: filteredData.amy_stress.map(val => val !== null ? val : null),
                             borderColor: '#f44336',
                             backgroundColor: 'rgba(244, 67, 54, 0.2)',
                             borderWidth: 3,
@@ -964,7 +1014,7 @@
                         },
                         {
                             label: "Michael's Stress",
-                            data: trendData.michael_stress.map(val => val !== null ? val : null),
+                            data: filteredData.michael_stress.map(val => val !== null ? val : null),
                             borderColor: '#ff9800',
                             backgroundColor: 'rgba(255, 152, 0, 0.2)',
                             borderWidth: 3,
@@ -977,7 +1027,7 @@
                         },
                         {
                             label: 'Crashouts/Arguments',
-                            data: trendData.crashouts_or_arguments.map(val => val === 1 ? 6 : null),
+                            data: filteredData.crashouts_or_arguments.map(val => val === 1 ? 6 : null),
                             borderColor: 'transparent',
                             backgroundColor: 'transparent',
                             borderWidth: 0,
@@ -1013,7 +1063,7 @@
                             callbacks: {
                                 title: function(context) {
                                     const index = context[0].dataIndex;
-                                    return new Date(trendData.dates[index]).toLocaleDateString();
+                                    return new Date(filteredData.dates[index]).toLocaleDateString();
                                 },
                                 label: function(context) {
                                     const value = context.parsed.y;
@@ -1196,6 +1246,32 @@
             container.appendChild(piece);
         }
 
+        // Time period toggle function
+        function toggleYTD() {
+            const toggleButton = document.getElementById('ytdToggle');
+            const toggleText = document.getElementById('ytdToggleText');
+ 
+            // Toggle the All Time state
+            window.isAllTimeEnabled = !window.isAllTimeEnabled;
+            
+            // Update button appearance
+            if (window.isAllTimeEnabled) {
+                toggleButton.style.background = 'pink';
+                toggleButton.style.color = 'black';
+                toggleButton.style.borderColor = 'pink';
+                toggleText.textContent = 'Show 30 day';
+            } else {
+                toggleButton.style.background = '#f8f9fa';
+                toggleButton.style.color = '#37352f';
+                toggleText.textContent = 'Show All';
+                toggleButton.style.borderColor = '#e1e5e9';
+            }
+            
+            // Recreate the chart with the new filter
+            if (window.allTrendData) {
+                createTrendsChart(window.allTrendData);
+            }
+        }
         // Load data when page loads
         loadHangoutData();
         
