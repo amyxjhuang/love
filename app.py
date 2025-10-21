@@ -194,19 +194,19 @@ def get_memories_and_worries(processed_data):
     """Get memories and worries from processed data"""
     return processed_data['memories_and_worries']
 
-def get_30_day_trends(processed_data):
+def get_trends(processed_data):
     """Get 30-day trend data for graphing"""
     from datetime import datetime, timedelta
     
     # Get records from the last 30 days
-    thirty_days_ago = datetime.now() - timedelta(days=30)
+    # thirty_days_ago = datetime.now() - timedelta(days=30)
     
     # Filter records from last 30 days
     recent_records = []
     for record in processed_data['sorted_records']:
         record_date = get_date_from_record(record)
-        if record_date and record_date >= thirty_days_ago:
-            recent_records.append(record)
+        # if record_date and record_date >= thirty_days_ago:
+        recent_records.append(record)
     
     # Create a dictionary to store daily data
     daily_data = {}
@@ -233,7 +233,7 @@ def get_30_day_trends(processed_data):
     crashouts_or_arguments = []
     
     # Start from 30 days ago and go to today
-    current_date = thirty_days_ago
+    current_date = get_date_from_record(processed_data['sorted_records'][-1])
     while current_date <= datetime.now():
         date_str = current_date.strftime('%Y-%m-%d')
         dates.append(date_str)
@@ -713,7 +713,7 @@ def hangout_data():
         memories_and_worries = get_memories_and_worries(processed_data)
         
         # Get 30-day trend data
-        trend_data = get_30_day_trends(processed_data)
+        trend_data = get_trends(processed_data)
         
         # Check if relationship is monogamous
         monogamous = not any(
@@ -725,7 +725,7 @@ def hangout_data():
             'status': status_data,
             'last_entries': last_entries_data,
             'memories_and_worries': memories_and_worries,
-            '30_day_trends': trend_data,
+            'trend_data': trend_data,
             'monogamous': monogamous
         })
         

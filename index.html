@@ -866,11 +866,11 @@
             updateRelationshipDuration();
             
             // Create the trends chart if data is available
-            if (data['30_day_trends']) {
-                console.log('30_day_trends data available, creating chart...');
-                createTrendsChart(data['30_day_trends']);
+            if (data['trend_data']) {
+                console.log('get_trends data available, creating chart...');
+                createTrendsChart(data['trend_data']);
             } else {
-                console.log('No 30_day_trends data found in response');
+                console.log('No trend_data data found in response');
             }
         }
 
@@ -1139,7 +1139,7 @@
             if (durationElement) {
                 durationElement.innerHTML = `
                     <span class="status-summary-label">🇨🇳 Together for:</span>
-                    <span class="status-summary-value hangout">${monthsSinceStart} months (${daysSinceStart} days total)</span>
+                    <span class="status-summary-value hangout">${monthsSinceStart} months (${daysSinceStart} days)</span>
                 `;
             }
         }
